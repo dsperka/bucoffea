@@ -118,7 +118,7 @@ def compare_integrals(acc1, acc2, distribution1, distribution2, region='sr_vbf',
     with open(outpath, 'w+') as f:
         f.write(f'Data region: {region}\n')
         f.write('Integral1: merged_2021-10-13_vbfhinv_ULv8_05Feb21\n')
-        f.write('Integral2: merged_2022-06-04_vbfhinv_ULv8_05Feb21_withJetImages\n\n')
+        f.write('Integral2: merged_2022-06-06_vbfhinv_ULv8_05Feb21_withJetImages\n\n')
         f.write(tabulate(table, headers=["Process", "Integral1", "Integral2", "Diff (%)"], floatfmt=".3f"))
 
     print(f'Data saved at: {outpath}')
@@ -131,7 +131,7 @@ def main():
     inpath1 = bucoffea_path('submission/merged_2021-10-13_vbfhinv_ULv8_05Feb21')
 
     # ML version
-    inpath2 = bucoffea_path('submission/merged_2022-06-04_vbfhinv_ULv8_05Feb21_withJetImages')
+    inpath2 = bucoffea_path('submission/merged_2022-06-06_vbfhinv_ULv8_05Feb21_withJetImages')
 
     for inpath in [inpath1, inpath2]:
         assert os.path.exists(inpath), f"Cannot find input: {inpath}"
@@ -149,7 +149,16 @@ def main():
         year=args.year,
     )
 
-    compare_cutflows(acc1, acc2, dataset='MET_ver1_2017C', region=args.region)
+    dataset_for_region = {
+        'sr_vbf'    : 'MET_ver1_2017C',
+        'cr_1m_vbf' : 'MET_ver1_2017C',
+        'cr_2m_vbf' : 'MET_ver1_2017C',
+        'cr_1e_vbf' : 'SingleElectron_ver1_2017C',
+        'cr_2e_vbf' : 'SingleElectron_ver1_2017C',
+        'cr_g_vbf'  : 'SinglePhoton_ver1_2017C',
+    }
+
+    compare_cutflows(acc1, acc2, dataset=dataset_for_region[args.region], region=args.region)
 
 if __name__ == '__main__':
     main()
