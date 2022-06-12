@@ -14,7 +14,6 @@ from bucoffea.helpers.tensorflow import (
 from bucoffea.helpers.pytorch import (
     load_pytorch_state_dict,
     prepare_data_for_dnn,
-    get_dnn_predictions,
     FullyConnectedNN,
 )
 
@@ -624,7 +623,6 @@ class vbfhinvProcessor(processor.ProcessorABC):
 
         # Get the predictions from this model
         df['dnn_score'] = dnn_model.predict(dnn_features)
-        print(df['dnn_score'])
 
         for region, cuts in regions.items():
             if not re.match(cfg.RUN.REGIONREGEX, region):
@@ -760,8 +758,9 @@ class vbfhinvProcessor(processor.ProcessorABC):
                     if gen_v_pt is not None:
                         output['tree_float16'][region]["gen_boson_pt"]  +=  processor.column_accumulator(np.float16(gen_v_pt[mask]))
 
-                    # Signal-like score from the CNN
+                    # Signal-like score from the neural networks
                     output['tree_float16'][region]["cnn_score"]         +=  processor.column_accumulator(np.float16(df["cnn_score"][:, 1][mask]))                    
+                    output['tree_float16'][region]["dnn_score"]         +=  processor.column_accumulator(np.float16(df["dnn_score"][:, 1][mask]))                    
 
                     output['tree_float16'][region]["htmiss"]            +=  processor.column_accumulator(np.float16(df['htmiss'][mask]))
                     output['tree_float16'][region]["ht"]                +=  processor.column_accumulator(np.float16(df['ht'][mask]))
@@ -991,6 +990,8 @@ class vbfhinvProcessor(processor.ProcessorABC):
             # Save signal-like score distribution
             ezfill('cnn_score',          score=df["cnn_score"][:, 1][mask],     weight=rweight[mask])
             ezfill('cnn_score_mjj',      score=df["cnn_score"][:, 1][mask],     mjj=df["mjj"][mask],    weight=rweight[mask])
+
+            ezfill('dnn_score',          score=df["dnn_score"][:, 1][mask],     weight=rweight[mask])
 
             rweight_nopref = region_weights.partial_weight(exclude=exclude+['prefire'])
             ezfill('mjj_nopref',                mjj=df["mjj"][mask],      weight=rweight_nopref[mask] )

@@ -37,23 +37,6 @@ def prepare_data_for_dnn(df: pd.DataFrame) -> np.ndarray:
 
     return scaler.fit_transform(features)
 
-def get_dnn_predictions(model, features: np.ndarray) -> np.ndarray:
-    """
-    Given the PyTorch DNN model and the set of features, perform a feed-forward
-    and obtain the predictions.
-
-    Returns the scores as a NumPy array.
-    """
-    # Run on a CPU
-    device = torch.device("cpu")
-
-    # Transform the data into a Torch tensor before feeding into the model
-    x = torch.Tensor(features).to(device)
-    # Put model in evaluation mode
-    model.eval()
-
-    return model(x).cpu().detach().numpy()
-
 
 def swish(x):
     return x * torch.sigmoid(x)

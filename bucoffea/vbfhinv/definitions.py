@@ -113,6 +113,7 @@ def vbfhinv_accumulator(cfg):
     items["met_pt_ak40_hf"] = Hist("Counts", dataset_ax, region_ax, met_ax)
     items["met_pt_ak41_hf"] = Hist("Counts", dataset_ax, region_ax, met_ax)
 
+    items["dnn_score"] = Hist("Counts", dataset_ax, region_ax, score_ax)
     items["cnn_score"] = Hist("Counts", dataset_ax, region_ax, score_ax)
     items["cnn_score_unc"] = Hist("Counts", dataset_ax, region_ax, score_ax, unc_ax)
 
