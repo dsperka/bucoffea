@@ -2,12 +2,19 @@ import copy
 import coffea.processor as processor
 import re
 import numpy as np
+import pandas as pd
 from dynaconf import settings as cfg
 
 from bucoffea.helpers.tensorflow import (
                             load_model, 
                             prepare_data_for_cnn
                             )
+
+from bucoffea.helpers.pytorch import (
+    load_pytorch_model,
+    prepare_data_for_dnn,
+    get_dnn_predictions,
+)
 
 from bucoffea.helpers import (
                               bucoffea_path,
@@ -593,7 +600,24 @@ class vbfhinvProcessor(processor.ProcessorABC):
         model = load_model(model_dir)
         
         jetimages_norm = prepare_data_for_cnn(jet_images)
-        df['nn_score'] = model.predict(jetimages_norm)
+        df['cnn_score'] = model.predict(jetimages_norm)
+
+        # Get predictions from the deep neural network model
+        # Retrieve the list of features we're going to use, and scale them
+        dnn_features = {}
+        for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
+            dnn_features[feature_name] = df[feature_name]
+        
+        dnn_features = pd.DataFrame(dnn_features)
+        dnn_features = prepare_data_for_dnn(dnn_features)
+
+        # Load the PyTorch model and obtain predictions
+        # TODO: Currently this fails, need a way to figure out how to load a
+        # PyTorch model into a different environment
+        # See here: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-model-for-inference
+        dnn_model = load_pytorch_model(cfg.NN_MODELS.DEEPNET.PATH)
+
+        df['dnn_score'] = get_dnn_predictions(dnn_model, dnn_features)
 
         for region, cuts in regions.items():
             if not re.match(cfg.RUN.REGIONREGEX, region):
@@ -730,7 +754,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
                         output['tree_float16'][region]["gen_boson_pt"]  +=  processor.column_accumulator(np.float16(gen_v_pt[mask]))
 
                     # Signal-like score from the CNN
-                    output['tree_float16'][region]["cnn_score"]         +=  processor.column_accumulator(np.float16(df["nn_score"][:, 1][mask]))                    
+                    output['tree_float16'][region]["cnn_score"]         +=  processor.column_accumulator(np.float16(df["cnn_score"][:, 1][mask]))                    
 
                     output['tree_float16'][region]["htmiss"]            +=  processor.column_accumulator(np.float16(df['htmiss'][mask]))
                     output['tree_float16'][region]["ht"]                +=  processor.column_accumulator(np.float16(df['ht'][mask]))
@@ -958,8 +982,8 @@ class vbfhinvProcessor(processor.ProcessorABC):
             ezfill('mjj',                mjj=df["mjj"][mask],      weight=rweight[mask] )
 
             # Save signal-like score distribution
-            ezfill('cnn_score',          score=df["nn_score"][:, 1][mask],     weight=rweight[mask])
-            ezfill('cnn_score_mjj',      score=df["nn_score"][:, 1][mask],     mjj=df["mjj"][mask],    weight=rweight[mask])
+            ezfill('cnn_score',          score=df["cnn_score"][:, 1][mask],     weight=rweight[mask])
+            ezfill('cnn_score_mjj',      score=df["cnn_score"][:, 1][mask],     mjj=df["mjj"][mask],    weight=rweight[mask])
 
             rweight_nopref = region_weights.partial_weight(exclude=exclude+['prefire'])
             ezfill('mjj_nopref',                mjj=df["mjj"][mask],      weight=rweight_nopref[mask] )
@@ -986,7 +1010,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
                         weight=weight[mask],
                     )
                     ezfill('cnn_score_unc',
-                        score=df['nn_score'][:, 1][mask],
+                        score=df['cnn_score'][:, 1][mask],
                         uncertainty=variation,
                         weight=weight[mask],
                     )
@@ -1080,7 +1104,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
                         weight=(rw_nopu * w)[mask]
                     )
                     ezfill('cnn_score_unc',
-                        score=df['nn_score'][:, 1][mask],
+                        score=df['cnn_score'][:, 1][mask],
                         uncertainty=puvar,
                         weight=(rw_nopu * w)[mask]
                     )
@@ -1105,7 +1129,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
                         )
 
                         ezfill('cnn_score_unc',
-                            score=df['nn_score'][:, 1][mask],
+                            score=df['cnn_score'][:, 1][mask],
                             uncertainty=variation,
                             weight=(rw_nopref * w)[mask]
                         )
@@ -1157,7 +1181,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
                             weight=w)
                         ezfill(
                             'cnn_score_unc',
-                            score=df['nn_score'][:, 1][mask],
+                            score=df['cnn_score'][:, 1][mask],
                             uncertainty=unc,
                             weight=w)
 

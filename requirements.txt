@@ -13,3 +13,5 @@ awkward<1.0.0
 uproot<4.0.0
 tensorflow-cpu==2.6.2
 protobuf<4.0.0
+torch==1.9.0
+scikit-learn==0.24.2
