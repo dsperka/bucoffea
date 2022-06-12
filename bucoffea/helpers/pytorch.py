@@ -6,8 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from sklearn.preprocessing import StandardScaler
-
 from bucoffea.helpers.paths import bucoffea_path
 
 def load_pytorch_state_dict(model_dir: str):
@@ -23,19 +21,22 @@ def load_pytorch_state_dict(model_dir: str):
 
 def prepare_data_for_dnn(df: pd.DataFrame) -> np.ndarray:
     """
-    Scales the data to be ready for the deep neural network (using sklearn's StandardScaler).
-    Returns the data as a Numpy array.
+    Scales the data to be ready for the deep neural network to zero mean and unit variance.
+    Ignores NaN and infinity values in data, returns the data as a Numpy array.
 
     Note that the input data MUST be passed in as a Pandas DataFrame.
     """
-    scaler = StandardScaler()
-
-    # Ignore NaN or infinity values
-    df = df.replace([np.inf, -np.inf], np.nan).dropna()
-
+    df = df.replace([np.inf, -np.inf], np.nan)
     features = df.to_numpy()
 
-    return scaler.fit_transform(features)
+    # Compute mean and standard deviation per feature, ignoring NaN values
+    mean = np.nanmean(features, axis=0)
+    std = np.nanstd(features, axis=0)
+
+    # Do the feature transformation
+    features = (features - mean) / std
+
+    return features
 
 
 def swish(x):

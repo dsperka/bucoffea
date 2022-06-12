@@ -613,7 +613,6 @@ class vbfhinvProcessor(processor.ProcessorABC):
         dnn_features = prepare_data_for_dnn(dnn_features)
 
         # Create an instance of the PyTorch model with the correct arch parameters
-        
         dnn_model = FullyConnectedNN(
             **dict(cfg.NN_MODELS.DEEPNET.ARCH_PARAMETERS)
         )
