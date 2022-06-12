@@ -140,11 +140,16 @@ default:
     convnet:
       path: models/model_2022-05-20_batch100_dropout0_25_regular
     deepnet:
-      path: models/pytorch/2022-06-11_dense_test
+      path: models/pytorch/2022-06-12_dense
       features:
         - mjj
         - detajj
         - dphijj
+      arch_parameters:
+        n_features: 3
+        n_classes: 2
+        n_nodes: [18,10,5,2]
+        dropout: 0.2
 
   sf:
     qcd_ew_nlo_w: # QCD x EW k factor for QCD Z

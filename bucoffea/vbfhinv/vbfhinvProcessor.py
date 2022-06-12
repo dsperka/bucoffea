@@ -1,6 +1,7 @@
 import copy
 import coffea.processor as processor
 import re
+import torch
 import numpy as np
 import pandas as pd
 from dynaconf import settings as cfg
@@ -11,9 +12,10 @@ from bucoffea.helpers.tensorflow import (
                             )
 
 from bucoffea.helpers.pytorch import (
-    load_pytorch_model,
+    load_pytorch_state_dict,
     prepare_data_for_dnn,
     get_dnn_predictions,
+    FullyConnectedNN,
 )
 
 from bucoffea.helpers import (
@@ -611,13 +613,18 @@ class vbfhinvProcessor(processor.ProcessorABC):
         dnn_features = pd.DataFrame(dnn_features)
         dnn_features = prepare_data_for_dnn(dnn_features)
 
-        # Load the PyTorch model and obtain predictions
-        # TODO: Currently this fails, need a way to figure out how to load a
-        # PyTorch model into a different environment
-        # See here: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-model-for-inference
-        dnn_model = load_pytorch_model(cfg.NN_MODELS.DEEPNET.PATH)
+        # Create an instance of the PyTorch model with the correct arch parameters
+        
+        dnn_model = FullyConnectedNN(
+            **dict(cfg.NN_MODELS.DEEPNET.ARCH_PARAMETERS)
+        )
+        
+        # Load the state dictionary (set of weights + biases) of a previously trained model
+        dnn_model.load_state_dict(load_pytorch_state_dict(cfg.NN_MODELS.DEEPNET.PATH))
 
-        df['dnn_score'] = get_dnn_predictions(dnn_model, dnn_features)
+        # Get the predictions from this model
+        df['dnn_score'] = dnn_model.predict(dnn_features)
+        print(df['dnn_score'])
 
         for region, cuts in regions.items():
             if not re.match(cfg.RUN.REGIONREGEX, region):
