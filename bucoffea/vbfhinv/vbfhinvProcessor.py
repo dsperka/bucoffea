@@ -621,7 +621,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
         dnn_model.load_state_dict(load_pytorch_state_dict(cfg.NN_MODELS.DEEPNET.PATH))
 
         # Get the predictions from this model
-        df['dnn_score'] = dnn_model.predict(dnn_features)
+        df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())
 
         for region, cuts in regions.items():
             if not re.match(cfg.RUN.REGIONREGEX, region):
@@ -985,6 +985,11 @@ class vbfhinvProcessor(processor.ProcessorABC):
             ezfill('dphijj',             dphi=df["dphijj"][mask],   weight=rweight[mask] )
             ezfill('detajj',             deta=df["detajj"][mask],   weight=rweight[mask] )
             ezfill('mjj',                mjj=df["mjj"][mask],      weight=rweight[mask] )
+
+            # Dijet quantities scaled to zero mean and unit variance
+            ezfill('mjj_transformed',       mjj=dnn_features["mjj"].to_numpy()[mask],          weight=rweight[mask] )
+            ezfill('detajj_transformed',    deta=dnn_features["detajj"].to_numpy()[mask],      weight=rweight[mask] )
+            ezfill('dphijj_transformed',    dphi=dnn_features["dphijj"].to_numpy()[mask],      weight=rweight[mask] )
 
             # Save signal-like score distribution
             ezfill('cnn_score',          score=df["cnn_score"][:, 1][mask],     weight=rweight[mask])

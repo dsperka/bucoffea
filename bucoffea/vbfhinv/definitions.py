@@ -131,6 +131,11 @@ def vbfhinv_accumulator(cfg):
     items["dphijj"] = Hist("Counts", dataset_ax, region_ax, dphi_ax)
     items["detajj"] = Hist("Counts", dataset_ax, region_ax, deta_ax)
 
+    # Transformed dijet variables (scaled to zero-mean, unit-variance)
+    items["mjj_transformed"] = Hist("Counts", dataset_ax, region_ax, mjj_ax)
+    items["detajj_transformed"] = Hist("Counts", dataset_ax, region_ax, deta_ax)
+    items["dphijj_transformed"] = Hist("Counts", dataset_ax, region_ax, dphi_ax)
+
     items["mjj_ak4_eta0"] = Hist("Counts", dataset_ax, region_ax, mjj_ax_coarse, jet_eta_ax)
 
     items["ak4_pt0"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
