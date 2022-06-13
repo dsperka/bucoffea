@@ -137,6 +137,9 @@ default:
   mitigation:
     hem: True
   nn_models:
+    uncertainties:
+      - cnn_score
+      - dnn_score
     convnet:
       path: models/model_2022-05-20_batch100_dropout0_25_regular
     deepnet:

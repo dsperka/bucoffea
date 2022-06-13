@@ -116,6 +116,7 @@ def vbfhinv_accumulator(cfg):
 
     items["dnn_score"] = Hist("Counts", dataset_ax, region_ax, score_ax)
     items["cnn_score"] = Hist("Counts", dataset_ax, region_ax, score_ax)
+    items["dnn_score_unc"] = Hist("Counts", dataset_ax, region_ax, score_ax, unc_ax)
     items["cnn_score_unc"] = Hist("Counts", dataset_ax, region_ax, score_ax, unc_ax)
 
     items["cnn_score_mjj"] = Hist("Counts", dataset_ax, region_ax, score_ax, mjj_ax_coarse)

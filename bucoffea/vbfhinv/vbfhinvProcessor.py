@@ -1021,11 +1021,13 @@ class vbfhinvProcessor(processor.ProcessorABC):
                         uncertainty=variation,
                         weight=weight[mask],
                     )
-                    ezfill('cnn_score_unc',
-                        score=df['cnn_score'][:, 1][mask],
-                        uncertainty=variation,
-                        weight=weight[mask],
-                    )
+                    # Uncertainties on neural network score
+                    for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                        ezfill(f'{score_type}_unc',
+                            score=df[score_type][:, 1][mask],
+                            uncertainty=variation,
+                            weight=weight[mask],
+                        )
 
             if gen_v_pt is not None:
                 ezfill('gen_vpt', vpt=gen_v_pt[mask], weight=df['Generator_weight'][mask])
@@ -1115,11 +1117,12 @@ class vbfhinvProcessor(processor.ProcessorABC):
                         uncertainty=puvar,
                         weight=(rw_nopu * w)[mask]
                     )
-                    ezfill('cnn_score_unc',
-                        score=df['cnn_score'][:, 1][mask],
-                        uncertainty=puvar,
-                        weight=(rw_nopu * w)[mask]
-                    )
+                    for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                        ezfill(f'{score_type}_unc',
+                            score=df[score_type][:, 1][mask],
+                            uncertainty=puvar,
+                            weight=(rw_nopu * w)[mask]
+                        )
 
             # Variations in the prefire weight
             if cfg.RUN.UNCERTAINTIES.PREFIRE_SF and not df['is_data']:
@@ -1139,12 +1142,12 @@ class vbfhinvProcessor(processor.ProcessorABC):
                             uncertainty=variation,
                             weight=(rw_nopref * w)[mask]
                         )
-
-                        ezfill('cnn_score_unc',
-                            score=df['cnn_score'][:, 1][mask],
-                            uncertainty=variation,
-                            weight=(rw_nopref * w)[mask]
-                        )
+                        for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                            ezfill(f'{score_type}_unc',
+                                score=df[score_type][:, 1][mask],
+                                uncertainty=variation,
+                                weight=(rw_nopref * w)[mask]
+                            )
                 
                 except KeyError:
                     pass
@@ -1191,11 +1194,13 @@ class vbfhinvProcessor(processor.ProcessorABC):
                             mjj=df['mjj'][mask],
                             uncertainty=unc,
                             weight=w)
-                        ezfill(
-                            'cnn_score_unc',
-                            score=df['cnn_score'][:, 1][mask],
-                            uncertainty=unc,
-                            weight=w)
+                        
+                        for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                            ezfill(
+                                f'{score_type}_unc',
+                                score=df[score_type][:, 1][mask],
+                                uncertainty=unc,
+                                weight=w)
 
             # Muons
             if '_1m_' in region or '_2m_' in region or 'no_veto' in region:
