@@ -987,9 +987,9 @@ class vbfhinvProcessor(processor.ProcessorABC):
             ezfill('mjj',                mjj=df["mjj"][mask],      weight=rweight[mask] )
 
             # Dijet quantities scaled to zero mean and unit variance
-            ezfill('mjj_transformed',       mjj=dnn_features["mjj"].to_numpy()[mask],          weight=rweight[mask] )
-            ezfill('detajj_transformed',    deta=dnn_features["detajj"].to_numpy()[mask],      weight=rweight[mask] )
-            ezfill('dphijj_transformed',    dphi=dnn_features["dphijj"].to_numpy()[mask],      weight=rweight[mask] )
+            ezfill('mjj_transformed',       transformed=dnn_features["mjj"].to_numpy()[mask],         weight=rweight[mask] )
+            ezfill('detajj_transformed',    transformed=dnn_features["detajj"].to_numpy()[mask],      weight=rweight[mask] )
+            ezfill('dphijj_transformed',    transformed=dnn_features["dphijj"].to_numpy()[mask],      weight=rweight[mask] )
 
             # Save signal-like score distribution
             ezfill('cnn_score',          score=df["cnn_score"][:, 1][mask],     weight=rweight[mask])

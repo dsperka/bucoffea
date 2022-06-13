@@ -10,6 +10,7 @@ common_distributions = [
     'detajj',
     'dphijj',
     'cnn_score',
+    'dnn_score',
     'recoil',
     'ak4_eta0',
     'ak4_eta1',

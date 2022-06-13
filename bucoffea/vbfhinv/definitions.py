@@ -30,6 +30,7 @@ def vbfhinv_accumulator(cfg):
     recoil_ax = Bin("recoil", r"Recoil (GeV)", 200, 0, 2000)
 
     score_ax = Bin("score", "Neural network score", 50, 0, 1)
+    transformed_ax = Bin("transformed", "Transformed value", 50, -5, 5)
 
     mjj_ax = Bin("mjj", r"$M_{jj}$ (GeV)", 150, 0, 7500)
     mjj_ax_coarse = Bin("mjj", r"$M_{jj}$ (GeV)", [200,500,1000,1500,2000,3000,7500])
@@ -132,9 +133,9 @@ def vbfhinv_accumulator(cfg):
     items["detajj"] = Hist("Counts", dataset_ax, region_ax, deta_ax)
 
     # Transformed dijet variables (scaled to zero-mean, unit-variance)
-    items["mjj_transformed"] = Hist("Counts", dataset_ax, region_ax, mjj_ax)
-    items["detajj_transformed"] = Hist("Counts", dataset_ax, region_ax, deta_ax)
-    items["dphijj_transformed"] = Hist("Counts", dataset_ax, region_ax, dphi_ax)
+    items["mjj_transformed"] = Hist("Counts", dataset_ax, region_ax, transformed_ax)
+    items["detajj_transformed"] = Hist("Counts", dataset_ax, region_ax, transformed_ax)
+    items["dphijj_transformed"] = Hist("Counts", dataset_ax, region_ax, transformed_ax)
 
     items["mjj_ak4_eta0"] = Hist("Counts", dataset_ax, region_ax, mjj_ax_coarse, jet_eta_ax)
 
