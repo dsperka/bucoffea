@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 
 import os
-from bucoffea.plot.util import acc_from_dir
-from klepto.archives import dir_archive
 import argparse
+
+from klepto.archives import dir_archive
 from datetime import datetime
+
 from bucoffea.helpers.git import git_rev_parse, git_diff
+
 pjoin = os.path.join
 
 def parse_commandline():
     parser = argparse.ArgumentParser()
     parser.add_argument('inpath', type=str, help='Input path to use.')
-    parser.add_argument('--channel', type=str, help='Channel to make inputs for.', default='monojet')
+    parser.add_argument('--distribution', type=str, help='Distribution to make limit inputs for.', default='cnn_score')
+    parser.add_argument('--channel', type=str, help='Channel to make inputs for.', default='vbfhinv')
     parser.add_argument('--unblind', action='store_true', help='Include signal region data')
     parser.add_argument('--years', nargs='*', default=[2017, 2018], help='The years to prepare the limit input for')
-    parser.add_argument('--eoyxs', action='store_true', help='Use the EOY XS for normalization, otherwise use UL XS')
-    parser.add_argument('--nlo', action='store_true', help='If specified, use NLO QCD V+jets samples from the limit input file')
     parser.add_argument('--one_fifth_unblind', action='store_true', help='1/5th unblinding: Scale the MC in signal region by 1/5')
     args = parser.parse_args()
 
@@ -27,27 +28,21 @@ def parse_commandline():
 def main():
     args = parse_commandline()
 
-    klepto = True
-    if klepto:
-        acc = dir_archive(args.inpath, serialized=True, compression=0, memsize=1e3)
-        acc.load('recoil')
-        acc.load('mjj')
-        acc.load('sumw')
-        acc.load('sumw_pileup')
-        acc.load('nevents')
-    else:
-        acc = acc_from_dir(args.inpath)
+    acc = dir_archive(args.inpath, serialized=True, compression=0, memsize=1e3)
+
+    acc.load(args.distribution)
+    acc.load('sumw')
+    acc.load('sumw_pileup')
+    acc.load('nevents')
 
     outdir = pjoin('./output/',list(filter(lambda x:x,args.inpath.split('/')))[-1])
-    if args.nlo:
-        outdir = f'{outdir}_NLO_VJets'
 
-    # Store the command line arguments in the INFO.txt file
     try:
         os.makedirs(outdir)
     except FileExistsError:
         pass
     
+    # Store the command line arguments in the INFO.txt file
     infofile = pjoin(outdir, 'INFO.txt')
     with open(infofile, 'w+') as f:
         f.write(f'Limit input creation: {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}\n')
@@ -62,7 +57,6 @@ def main():
             f.write(f'{arg}: {val}\n')
 
     for channel in args.channel.split(','):
-        print(channel)
         if channel == 'monojet':
             from legacy_monojet import legacy_limit_input_monojet
             legacy_limit_input_monojet(acc, outdir=outdir, unblind=args.unblind)
@@ -71,13 +65,16 @@ def main():
             legacy_limit_input_monov(acc, outdir=outdir, unblind=args.unblind)
         elif channel == 'vbfhinv':
             from legacy_vbf import legacy_limit_input_vbf
-            legacy_limit_input_vbf(acc, outdir=outdir, 
+            legacy_limit_input_vbf(acc,
+                    distribution=args.distribution,
+                    outdir=outdir, 
                     unblind=args.unblind, 
                     years=args.years, 
-                    ulxs=not args.eoyxs, 
                     one_fifth_unblind=args.one_fifth_unblind,
-                    nlo=args.nlo
                 )
+        else:
+            raise ValueError(f'Unknown channel specified: {channel}')
+
 
 if __name__ == "__main__":
     main()
