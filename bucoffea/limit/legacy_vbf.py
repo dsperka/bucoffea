@@ -2,42 +2,44 @@
 import copy
 import os
 import re
+import uproot
+import ROOT as r
 import numpy as np
+
 from collections import defaultdict
 from tabulate import tabulate
 from tqdm import tqdm
-
-import uproot
 from coffea import hist
 
-import ROOT as r
-from bucoffea.plot.util import merge_datasets, merge_extensions, scale_xs_lumi, URTH1
+from bucoffea.plot.util import (
+    merge_datasets, 
+    merge_extensions, 
+    scale_xs_lumi, 
+    URTH1
+    )
+
 from legacy_monojet import suppress_negative_bins
+
 pjoin = os.path.join
 
-def datasets(year, unblind=False, nlo=False):
 
+def datasets(year, unblind=False):
+    """Datasets to read for each region."""
+    
     data = {
-                    'cr_1m_vbf' : f'MET_{year}',
-                    'cr_2m_vbf' : f'MET_{year}',
-                    'cr_1e_vbf' : f'EGamma_{year}',
-                    'cr_2e_vbf' : f'EGamma_{year}',
-                    'cr_g_vbf' : f'EGamma_{year}',
-                    'sr_vbf_no_veto_all' : f'nomatch',
-                }
+        'cr_1m_vbf' : re.compile(f'MET_{year}'),
+        'cr_2m_vbf' : re.compile(f'MET_{year}'),
+        'cr_1e_vbf' : re.compile(f'EGamma_{year}'),
+        'cr_2e_vbf' : re.compile(f'EGamma_{year}'),
+        'cr_g_vbf'  : re.compile(f'EGamma_{year}'),
+        'sr_vbf_no_veto_all' : re.compile(f'nomatch'),
+    }
+    
+    # If we're unblinding, we want the data in the signal region as well
     if unblind:
         data['sr_vbf'] = f'MET_{year}'
-    mc = {
-            'sr_vbf_no_veto_all' : re.compile(f'(ttH_HToInvisible_M125.*|WH_WToQQ_Hinv_M125.*|ZH_ZToQQ_HToInv.*M125.*|(VBF|GluGlu)_HToInvisible.*M125.*|ggZH.*|ZJetsToNuNu_HT.*|EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_M-50_HT_MLM.*|WJetsToLNu.*HT.*).*{year}'),
-            'cr_1m_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_M-50_HT_MLM.*|WJetsToLNu.*HT.*).*{year}'),
-            'cr_1e_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_M-50_HT_MLM.*|WJetsToLNu.*HT.*).*{year}'),
-            'cr_2m_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_M-50_HT_MLM.*|WJetsToLNu.*HT.*).*{year}'),
-            'cr_2e_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_M-50_HT_MLM.*|WJetsToLNu.*HT.*).*{year}'),
-            'cr_g_vbf' : re.compile(f'(GJets_DR-0p4.*|VBFGamma.*|QCD_data.*|WJetsToLNu.*HT.*).*{year}'),
-            'sr_vbf' : re.compile('nomatch')
-          }
 
-    mc_nlo = {
+    mc = {
         'sr_vbf_no_veto_all' : re.compile(f'(ttH_HToInvisible_M125.*|WH_WToQQ_Hinv_M125.*|ZH_ZToQQ_HToInv.*M125.*|(VBF|GluGlu)_HToInvisible.*M125.*|ggZH.*|ZNJetsToNuNu_M-50_LHEFilterPtZ-FXFX.*|EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
         'cr_1m_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
         'cr_1e_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
@@ -47,20 +49,13 @@ def datasets(year, unblind=False, nlo=False):
         'sr_vbf' : re.compile('nomatch')
     }
 
-    tmp = {}
+    return data, mc
 
-    for k, v in data.items():
-        tmp[k] = re.compile(v)
-    data.update(tmp)
-
-    mc_dict = mc
-    if nlo:
-        mc_dict = mc_nlo
-
-    return data, mc_dict
-
-def legacy_dataset_name_vbf(dataset):
-
+def legacy_dataset_name_vbf(dataset) -> str:
+    """
+    Given the dataset name, return the short-name to use to save under the ROOT file.
+    """
+    # Signal datasets
     m = re.match("VBF_HToInvisible_M(\d+)(_withDipoleRecoil)?(_PSweights)?_pow_pythia8_201[0-9]", dataset)
     if m:
         mh = m.groups()[0]
@@ -68,6 +63,7 @@ def legacy_dataset_name_vbf(dataset):
             return "vbf"
         else:
             return f"vbf{mh}"
+    
     m = re.match("ttH_HToInvisible_M(\d+)_pow_pythia8_201[0-9]", dataset)
     if m:
         mh = m.groups()[0]
@@ -115,6 +111,7 @@ def legacy_dataset_name_vbf(dataset):
     if m:
         return "zh_jhu"
 
+    # Look for other background dataset patterns
     patterns = {
         'EWKZ\d?Jets.*ZToLL.*' : 'ewkzll',
         'EWKZ\d?Jets.*ZToNuNu.*' : 'ewkzjets',
@@ -134,9 +131,13 @@ def legacy_dataset_name_vbf(dataset):
         if re.match(pat, dataset):
             return ret
 
-    raise RuntimeError(f'Cannot find legacy region name for dataset :"{dataset}"')
+    raise RuntimeError(f'Cannot find legacy region name for dataset: "{dataset}"')
 
-def legacy_region_name(region):
+def legacy_region_name(region) -> str:
+    """
+    Given the region name used in the analysis, return the short
+    region name to use while saving histograms to the ROOT file.
+    """
     patterns = {
         'cr_2m_.*' : 'Zmm',
         'cr_2e_.*' : 'Zee',
@@ -149,7 +150,7 @@ def legacy_region_name(region):
     for pat, ret in patterns.items():
         if re.match(pat, region):
             return ret
-    raise RuntimeError(f'Cannot find legacy region name for region :"{region}"')
+    raise RuntimeError(f'Cannot find legacy region name for region: "{region}"')
 
 def recoil_bins_2016():
     return [ 250.,  280.,  310.,  340.,  370.,  400.,
@@ -161,13 +162,20 @@ def mjj_bins_2016():
     return [200., 400., 600., 900., 1200., 1500.,
             2000., 2750., 3500., 5000.]
 
-def export_coffea_histogram(h, overflow='over', suppress_last_bin=False):
+
+def nn_score_ax() -> hist.Bin:
+    """Returns the new binning for the neural network score."""
+    new_ax = hist.Bin("score", "Neural network score", 25, 0, 1)
+    return new_ax
+
+
+def export_coffea_histogram(h, overflow='over', axname='score', suppress_last_bin=False):
     '''Helper function to: coffea histogram -> (sumw, xedges) with the desired overflow behavior.'''
     if h.dim() != 1:
         raise RuntimeError('The dimension of the histogram must be 1.')
-    
+
     sumw, sumw2 = h.values(overflow=overflow, sumw2=True)[()]
-    xedges = h.axis('mjj').edges()
+    xedges = h.axis(axname).edges()
 
     # Add the contents of the overflow to the last bin
     if overflow == 'over':
@@ -183,16 +191,21 @@ def export_coffea_histogram(h, overflow='over', suppress_last_bin=False):
 
     return URTH1(edges=xedges, sumw=sumw, sumw2=sumw2)
 
-def legacy_limit_input_vbf(acc, outdir='./output', unblind=False, years=[2017, 2018], ulxs=False, one_fifth_unblind=False, nlo=False):
-    """Writes ROOT TH1s to file as a limit input
+def legacy_limit_input_vbf(acc,
+    distribution='cnn_score',
+    outdir='./output', 
+    unblind=False, 
+    years=[2017, 2018], 
+    one_fifth_unblind=False, 
+    ) -> None:
+    """
+    Writes ROOT TH1 histograms to file as a limit input.
 
     :param acc: Accumulator (processor output)
     :type acc: coffea.processor.accumulator
     :param outdir: Output directory
     :type outdir: string
     """
-    distribution = 'mjj'
-
     regions = [
                 'cr_2m_vbf',
                 'cr_1m_vbf',
@@ -207,68 +220,87 @@ def legacy_limit_input_vbf(acc, outdir='./output', unblind=False, years=[2017, 2
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    # Rebin
+    # Get the distribution and pre-process
     h = copy.deepcopy(acc[distribution])
-    newax = hist.Bin('mjj','$M_{jj}$ (GeV)', mjj_bins_2016())
+    if distribution in ['cnn_score', 'dnn_score']:
+        newax = nn_score_ax()
+        axname = 'score'
+    elif distribution == 'mjj':
+        newax = hist.Bin('mjj','$M_{jj}$ (GeV)', mjj_bins_2016())
+        axname = 'mjj'
+    else:
+        raise RuntimeError(f'Limit input for VBF is not supported for distribution: {distribution}')
+    
+    # Rebin the distribution
     h = h.rebin(h.axis(newax.name), newax)
+    
     h = merge_extensions(h, acc)
-    scale_xs_lumi(h, ulxs=ulxs)
+    scale_xs_lumi(h)
     h = merge_datasets(h)
 
-    for year in tqdm(years):
+    for year in tqdm(years, desc="Making limit input files"):
         # Dump dataset mapping into txt files
         infofile = pjoin(outdir, f'dataset_mapping_{year}.txt')
-        with open(infofile, 'w+') as infolog:
 
+        with open(infofile, 'w+') as infof:
+            # Output ROOT file we're going to save (per year)
             f = uproot.recreate(pjoin(outdir, f'legacy_limit_vbf_{year}.root'))
-            data, mc = datasets(year, unblind=unblind, nlo=nlo)
+            data, mc = datasets(year, unblind=unblind)
+
+            # Loop over regions and make histograms
             for region in regions:
-                # print('='*20)
-                # print(f'Region {region}')
-                # print('='*20)
-                tag = region.split('_')[0]
 
-                ih = h.integrate(h.axis('region'),region)
+                # Get the histogram for this region
+                ih = h.integrate('region', region)
 
+                # Keep track of the dataset name and histogram mapping in a table
                 table = {
                     'Dataset name': [],
                     'Histogram name': [],
                 }
 
-                for dataset in map(str, h.axis('dataset').identifiers()):
+                for dataset in map(str, ih.axis('dataset').identifiers()):
                     if not (data[region].match(dataset) or mc[region].match(dataset)):
-                        # Insert dummy data for the signal region
-                        if region == 'sr_vbf' and re.match('ZJetsToNuNu.*', dataset) and not unblind:
-                            th1 = export_coffea_histogram(ih.integrate('dataset', dataset))
+                        # Insert dummy data for the signal region if we're not unblinding
+                        if region == 'sr_vbf' and re.match(f'ZNJetsToNuNu.*FXFX.*{year}', dataset) and not unblind:
+                            th1 = export_coffea_histogram(ih.integrate('dataset', dataset), axname=axname)
                             histo_name = 'signal_data'
                             f[histo_name] = th1
-                            continue
+                        
+                        # Just skip this dataset
                         else:
                             continue
-                    # print(f"Dataset: {dataset}")
 
                     h_cof = ih.integrate('dataset', dataset)
+                    
+                    # If we're applying 1/5th unblinding on signal region, down-scale the MC by 0.2
                     if one_fifth_unblind and region == 'sr_vbf_no_veto_all':
                         h_cof.scale(0.2)
-                    th1 = export_coffea_histogram(h_cof)
+                    
+                    th1 = export_coffea_histogram(h_cof, axname=axname)
+                    
                     try:
+                        # Determine the histogram name that we will use to save this dataset
                         histo_name = f'{legacy_region_name(region)}_{legacy_dataset_name_vbf(dataset)}'
-                        # print(f'Saved under histogram: {histo_name}')
                         table['Dataset name'].append(dataset)
-                        table['Histogram name'].append(legacy_dataset_name_vbf(dataset))
+                        table['Histogram name'].append(histo_name)
                     except:
                         print(f"Skipping {dataset}")
                         continue
 
-                    # print('-'*20)
+                    # Write the TH1 histogram object to output ROOT file
                     f[histo_name] = th1
 
-                infolog.write(f'Region: {region}\n\n')
-                infolog.write(tabulate(table, headers='keys'))
-                infolog.write('\n\n')
+                infof.write(f'Region: {region}\n\n')
+                infof.write(tabulate(table, headers='keys'))
+                infof.write('\n\n')
         
+        # Add signal region data, if we're not unblinding
         if not unblind:
             f[f'{legacy_region_name("sr_vbf")}_data'] = f[f'{legacy_region_name("sr_vbf")}_qcdzjets']
+    
+    # Merge the 2017 and 2018 histograms into a single file
+    # under separate sub-directories
     merge_legacy_inputs(outdir)
 
 def merge_legacy_inputs(outdir):
