@@ -1,7 +1,6 @@
 import copy
 import coffea.processor as processor
 import re
-import torch
 import numpy as np
 import pandas as pd
 from dynaconf import settings as cfg
