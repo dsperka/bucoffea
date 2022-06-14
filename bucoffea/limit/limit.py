@@ -56,6 +56,7 @@ def main():
         for arg, val in cli.items():
             f.write(f'{arg}: {val}\n')
 
+    # Create limit input ROOT files per channel specified from the command line
     for channel in args.channel.split(','):
         if channel == 'monojet':
             from legacy_monojet import legacy_limit_input_monojet

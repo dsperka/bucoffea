@@ -24,15 +24,16 @@ pjoin = os.path.join
 
 
 def datasets(year, unblind=False):
-    """Datasets per region."""
+    """Datasets to read for each region."""
+    
     data = {
-                    'cr_1m_vbf' : re.compile(f'MET_{year}'),
-                    'cr_2m_vbf' : re.compile(f'MET_{year}'),
-                    'cr_1e_vbf' : re.compile(f'EGamma_{year}'),
-                    'cr_2e_vbf' : re.compile(f'EGamma_{year}'),
-                    'cr_g_vbf'  : re.compile(f'EGamma_{year}'),
-                    'sr_vbf_no_veto_all' : re.compile(f'nomatch'),
-                }
+        'cr_1m_vbf' : re.compile(f'MET_{year}'),
+        'cr_2m_vbf' : re.compile(f'MET_{year}'),
+        'cr_1e_vbf' : re.compile(f'EGamma_{year}'),
+        'cr_2e_vbf' : re.compile(f'EGamma_{year}'),
+        'cr_g_vbf'  : re.compile(f'EGamma_{year}'),
+        'sr_vbf_no_veto_all' : re.compile(f'nomatch'),
+    }
     
     # If we're unblinding, we want the data in the signal region as well
     if unblind:
@@ -50,8 +51,11 @@ def datasets(year, unblind=False):
 
     return data, mc
 
-def legacy_dataset_name_vbf(dataset):
-    """Dataset names to save to ROOT file."""
+def legacy_dataset_name_vbf(dataset) -> str:
+    """
+    Given the dataset name, return the short-name to use to save under the ROOT file.
+    """
+    # Signal datasets
     m = re.match("VBF_HToInvisible_M(\d+)(_withDipoleRecoil)?(_PSweights)?_pow_pythia8_201[0-9]", dataset)
     if m:
         mh = m.groups()[0]
@@ -107,6 +111,7 @@ def legacy_dataset_name_vbf(dataset):
     if m:
         return "zh_jhu"
 
+    # Look for other background dataset patterns
     patterns = {
         'EWKZ\d?Jets.*ZToLL.*' : 'ewkzll',
         'EWKZ\d?Jets.*ZToNuNu.*' : 'ewkzjets',
@@ -126,10 +131,13 @@ def legacy_dataset_name_vbf(dataset):
         if re.match(pat, dataset):
             return ret
 
-    raise RuntimeError(f'Cannot find legacy region name for dataset :"{dataset}"')
+    raise RuntimeError(f'Cannot find legacy region name for dataset: "{dataset}"')
 
-def legacy_region_name(region):
-    """Region names to save to ROOT file."""
+def legacy_region_name(region) -> str:
+    """
+    Given the region name used in the analysis, return the short
+    region name to use while saving histograms to the ROOT file.
+    """
     patterns = {
         'cr_2m_.*' : 'Zmm',
         'cr_2e_.*' : 'Zee',
@@ -142,7 +150,7 @@ def legacy_region_name(region):
     for pat, ret in patterns.items():
         if re.match(pat, region):
             return ret
-    raise RuntimeError(f'Cannot find legacy region name for region :"{region}"')
+    raise RuntimeError(f'Cannot find legacy region name for region: "{region}"')
 
 def recoil_bins_2016():
     return [ 250.,  280.,  310.,  340.,  370.,  400.,
@@ -190,7 +198,8 @@ def legacy_limit_input_vbf(acc,
     years=[2017, 2018], 
     one_fifth_unblind=False, 
     ) -> None:
-    """Writes ROOT TH1s to file as a limit input
+    """
+    Writes ROOT TH1 histograms to file as a limit input.
 
     :param acc: Accumulator (processor output)
     :type acc: coffea.processor.accumulator
@@ -222,6 +231,7 @@ def legacy_limit_input_vbf(acc,
     else:
         raise RuntimeError(f'Limit input for VBF is not supported for distribution: {distribution}')
     
+    # Rebin the distribution
     h = h.rebin(h.axis(newax.name), newax)
     
     h = merge_extensions(h, acc)
@@ -270,6 +280,7 @@ def legacy_limit_input_vbf(acc,
                     th1 = export_coffea_histogram(h_cof, axname=axname)
                     
                     try:
+                        # Determine the histogram name that we will use to save this dataset
                         histo_name = f'{legacy_region_name(region)}_{legacy_dataset_name_vbf(dataset)}'
                         table['Dataset name'].append(dataset)
                         table['Histogram name'].append(histo_name)
