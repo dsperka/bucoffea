@@ -2,12 +2,19 @@ import copy
 import coffea.processor as processor
 import re
 import numpy as np
+import pandas as pd
 from dynaconf import settings as cfg
 
 from bucoffea.helpers.tensorflow import (
                             load_model, 
                             prepare_data_for_cnn
                             )
+
+from bucoffea.helpers.pytorch import (
+    load_pytorch_state_dict,
+    prepare_data_for_dnn,
+    FullyConnectedNN,
+)
 
 from bucoffea.helpers import (
                               bucoffea_path,
@@ -593,7 +600,27 @@ class vbfhinvProcessor(processor.ProcessorABC):
         model = load_model(model_dir)
         
         jetimages_norm = prepare_data_for_cnn(jet_images)
-        df['nn_score'] = model.predict(jetimages_norm)
+        df['cnn_score'] = model.predict(jetimages_norm)
+
+        # Get predictions from the deep neural network model
+        # Retrieve the list of features we're going to use, and scale them
+        dnn_features = {}
+        for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
+            dnn_features[feature_name] = df[feature_name]
+        
+        dnn_features = pd.DataFrame(dnn_features)
+        dnn_features = prepare_data_for_dnn(dnn_features)
+
+        # Create an instance of the PyTorch model with the correct arch parameters
+        dnn_model = FullyConnectedNN(
+            **dict(cfg.NN_MODELS.DEEPNET.ARCH_PARAMETERS)
+        )
+        
+        # Load the state dictionary (set of weights + biases) of a previously trained model
+        dnn_model.load_state_dict(load_pytorch_state_dict(cfg.NN_MODELS.DEEPNET.PATH))
+
+        # Get the predictions from this model
+        df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())
 
         for region, cuts in regions.items():
             if not re.match(cfg.RUN.REGIONREGEX, region):
@@ -729,8 +756,9 @@ class vbfhinvProcessor(processor.ProcessorABC):
                     if gen_v_pt is not None:
                         output['tree_float16'][region]["gen_boson_pt"]  +=  processor.column_accumulator(np.float16(gen_v_pt[mask]))
 
-                    # Signal-like score from the CNN
-                    output['tree_float16'][region]["cnn_score"]         +=  processor.column_accumulator(np.float16(df["nn_score"][:, 1][mask]))                    
+                    # Signal-like score from the neural networks
+                    output['tree_float16'][region]["cnn_score"]         +=  processor.column_accumulator(np.float16(df["cnn_score"][:, 1][mask]))                    
+                    output['tree_float16'][region]["dnn_score"]         +=  processor.column_accumulator(np.float16(df["dnn_score"][:, 1][mask]))                    
 
                     output['tree_float16'][region]["htmiss"]            +=  processor.column_accumulator(np.float16(df['htmiss'][mask]))
                     output['tree_float16'][region]["ht"]                +=  processor.column_accumulator(np.float16(df['ht'][mask]))
@@ -957,9 +985,16 @@ class vbfhinvProcessor(processor.ProcessorABC):
             ezfill('detajj',             deta=df["detajj"][mask],   weight=rweight[mask] )
             ezfill('mjj',                mjj=df["mjj"][mask],      weight=rweight[mask] )
 
+            # Dijet quantities scaled to zero mean and unit variance
+            ezfill('mjj_transformed',       transformed=dnn_features["mjj"].to_numpy()[mask],         weight=rweight[mask] )
+            ezfill('detajj_transformed',    transformed=dnn_features["detajj"].to_numpy()[mask],      weight=rweight[mask] )
+            ezfill('dphijj_transformed',    transformed=dnn_features["dphijj"].to_numpy()[mask],      weight=rweight[mask] )
+
             # Save signal-like score distribution
-            ezfill('cnn_score',          score=df["nn_score"][:, 1][mask],     weight=rweight[mask])
-            ezfill('cnn_score_mjj',      score=df["nn_score"][:, 1][mask],     mjj=df["mjj"][mask],    weight=rweight[mask])
+            ezfill('cnn_score',          score=df["cnn_score"][:, 1][mask],     weight=rweight[mask])
+            ezfill('cnn_score_mjj',      score=df["cnn_score"][:, 1][mask],     mjj=df["mjj"][mask],    weight=rweight[mask])
+
+            ezfill('dnn_score',          score=df["dnn_score"][:, 1][mask],     weight=rweight[mask])
 
             rweight_nopref = region_weights.partial_weight(exclude=exclude+['prefire'])
             ezfill('mjj_nopref',                mjj=df["mjj"][mask],      weight=rweight_nopref[mask] )
@@ -985,11 +1020,13 @@ class vbfhinvProcessor(processor.ProcessorABC):
                         uncertainty=variation,
                         weight=weight[mask],
                     )
-                    ezfill('cnn_score_unc',
-                        score=df['nn_score'][:, 1][mask],
-                        uncertainty=variation,
-                        weight=weight[mask],
-                    )
+                    # Uncertainties on neural network score
+                    for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                        ezfill(f'{score_type}_unc',
+                            score=df[score_type][:, 1][mask],
+                            uncertainty=variation,
+                            weight=weight[mask],
+                        )
 
             if gen_v_pt is not None:
                 ezfill('gen_vpt', vpt=gen_v_pt[mask], weight=df['Generator_weight'][mask])
@@ -1079,11 +1116,12 @@ class vbfhinvProcessor(processor.ProcessorABC):
                         uncertainty=puvar,
                         weight=(rw_nopu * w)[mask]
                     )
-                    ezfill('cnn_score_unc',
-                        score=df['nn_score'][:, 1][mask],
-                        uncertainty=puvar,
-                        weight=(rw_nopu * w)[mask]
-                    )
+                    for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                        ezfill(f'{score_type}_unc',
+                            score=df[score_type][:, 1][mask],
+                            uncertainty=puvar,
+                            weight=(rw_nopu * w)[mask]
+                        )
 
             # Variations in the prefire weight
             if cfg.RUN.UNCERTAINTIES.PREFIRE_SF and not df['is_data']:
@@ -1103,12 +1141,12 @@ class vbfhinvProcessor(processor.ProcessorABC):
                             uncertainty=variation,
                             weight=(rw_nopref * w)[mask]
                         )
-
-                        ezfill('cnn_score_unc',
-                            score=df['nn_score'][:, 1][mask],
-                            uncertainty=variation,
-                            weight=(rw_nopref * w)[mask]
-                        )
+                        for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                            ezfill(f'{score_type}_unc',
+                                score=df[score_type][:, 1][mask],
+                                uncertainty=variation,
+                                weight=(rw_nopref * w)[mask]
+                            )
                 
                 except KeyError:
                     pass
@@ -1155,11 +1193,13 @@ class vbfhinvProcessor(processor.ProcessorABC):
                             mjj=df['mjj'][mask],
                             uncertainty=unc,
                             weight=w)
-                        ezfill(
-                            'cnn_score_unc',
-                            score=df['nn_score'][:, 1][mask],
-                            uncertainty=unc,
-                            weight=w)
+                        
+                        for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                            ezfill(
+                                f'{score_type}_unc',
+                                score=df[score_type][:, 1][mask],
+                                uncertainty=unc,
+                                weight=w)
 
             # Muons
             if '_1m_' in region or '_2m_' in region or 'no_veto' in region:
