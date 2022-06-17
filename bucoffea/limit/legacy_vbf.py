@@ -197,6 +197,7 @@ def legacy_limit_input_vbf(acc,
     unblind=False, 
     years=[2017, 2018], 
     one_fifth_unblind=False, 
+    mcscales=None,
     ) -> None:
     """
     Writes ROOT TH1 histograms to file as a limit input.
@@ -276,6 +277,11 @@ def legacy_limit_input_vbf(acc,
                     # If we're applying 1/5th unblinding on signal region, down-scale the MC by 0.2
                     if one_fifth_unblind and region == 'sr_vbf_no_veto_all':
                         h_cof.scale(0.2)
+
+                    # If there is additional MC scaling specified via command line, do it here
+                    if mc[region].match(dataset) and region in mcscales:
+                        scale_val = mcscales[region]
+                        h_cof.scale(scale_val)
                     
                     th1 = export_coffea_histogram(h_cof, axname=axname)
                     
