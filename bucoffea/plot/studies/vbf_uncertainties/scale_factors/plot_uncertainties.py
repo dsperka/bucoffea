@@ -139,14 +139,14 @@ def main():
             "dataset_tag" : "VBF_HToInvisible_2017",
             "nuisance"    : "CMS_L1prefire_2017",
             "region"      : "sr_vbf_no_veto_all",
-            "outfile"     : "vbf_prefire_uncs.root",
+            "outfile"     : f"vbf_prefire_uncs_{args.variable}.root",
         },
         "puSF" : {
             "dataset"     : "VBF_HToInvisible.*M125.*2017",
             "dataset_tag" : "VBF_HToInvisible_2017",
             "nuisance"    : "CMS_pileup",
             "region"      : "sr_vbf_no_veto_all",
-            "outfile"     : "vbf_pileup_uncs.root",
+            "outfile"     : f"vbf_pileup_uncs_{args.variable}.root",
         },
     }
 
