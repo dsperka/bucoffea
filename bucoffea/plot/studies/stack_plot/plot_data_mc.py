@@ -95,6 +95,9 @@ def commandline():
     return args
 
 def dump_info(args):
+    """
+    Function to dump information about the command line arguments to an INFO.txt file.
+    """
     outdir = pjoin('./output/',list(filter(lambda x:x,args.inpath.split('/')))[-1])
 
     # Store the command line arguments in the INFO.txt file
@@ -105,7 +108,7 @@ def dump_info(args):
     
     infofile = pjoin(outdir, 'INFO.txt')
     with open(infofile, 'w+') as f:
-        f.write(f'Plot script most recently created at: {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}\n')
+        f.write(f'Plot script run at: {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}\n')
         f.write('Command line arguments:\n\n')
         cli = vars(args)
         for arg, val in cli.items():

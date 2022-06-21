@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import argparse
 from bucoffea.helpers.merging import CoffeaMerger
 
@@ -21,20 +22,24 @@ def parse_commandline():
         "--outdir",
         "-o",
         type=str,
-        default="INDIR/merged",
+        default=None,
         help="The output directory to use.",
     )
 
     args = parser.parse_args()
-    if "INDIR" in args.outdir:
-        args.outdir = args.outdir.replace("INDIR", args.indir)
-
+    
+    # Default name of the output directory
+    if not args.outdir:
+        input_dir = os.path.basename(os.path.abspath(args.indir))
+        args.outdir = f'merged_{input_dir}'
 
     return args
 
 
 def main():
     args = parse_commandline()
+    print(f'Merging and saving to output directory: {args.outdir}')
+    
     cm = CoffeaMerger(indir=args.indir, jobs=args.jobs)
     cm.to_klepto_dir(args.outdir)
 
