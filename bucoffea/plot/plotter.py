@@ -155,19 +155,28 @@ colors_IC = {
 }
 
 def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distribution='mjj', plot_signal=True, mcscale=1, binwnorm=None, fformats=['pdf'], qcd_file=None, jes_file=None, ulxs=True):
-    '''Plot data/MC comparison with the QCD template included.'''
+    """
+    Main plotter function to create a stack plot of data to background estimation (from MC).
+    """
     acc.load(distribution)
     h = acc[distribution]
 
+    # Some sanity checks before moving on, to see if data and MC are included in the histogram
+    if not h[data].identifiers('dataset'):
+        raise RuntimeError(f'Could not find data samples in histogram: {h}') 
+    if not h[mc].identifiers('dataset'):
+        raise RuntimeError(f'Could not find MC samples in histogram: {h}') 
+
+    overflow = 'none'
     if distribution == 'mjj':
         overflow = 'over'
-    else:
-        overflow = 'none'
 
+    # Pre-processing of the histogram, merging datasets, scaling w.r.t. XS and lumi
     h = merge_extensions(h, acc, reweight_pu=False)
     scale_xs_lumi(h, ulxs=ulxs, mcscale=mcscale)
     h = merge_datasets(h)
 
+    # Rebin the histogram if necessary
     if distribution in binnings.keys():
         new_ax = binnings[distribution]
         h = h.rebin(new_ax.name, new_ax)
@@ -187,9 +196,9 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
     h_data = h.integrate('region', data_region)
     h_mc = h.integrate('region', mc_region)
     
-    # Get the QCD template (estimation from HF), only to be used in SR for now
+    # Get the QCD template (HF-noise estimation), only to be used in the signal region
     if 'sr_vbf' in data_region:
-        # If a path to QCD file has been given, use it!
+        # If a path to HF-noise estimate file has been given, use it!
         # Otherwise, take the one from the relevant output directory
         if qcd_file:
             qcdfilepath = qcd_file
@@ -209,6 +218,7 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
         'elinewidth': 1,
     }
 
+    # Build the MC stack
     datasets = list(map(str, h[mc].identifiers('dataset')))
 
     plot_info = {
@@ -221,16 +231,19 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
 
         plot_info['sumw'].append(sumw)
 
-    # Add the QCD contribution (for SR only)
+    # Add the HF-noise contribution (for signal region only)
     if data_region == 'sr_vbf':
         plot_info['label'].insert(6, 'HF Noise Estimate')
         plot_info['sumw'].insert(6, h_qcd.values * mcscale)
 
     fig, ax, rax = fig_ratio()
+    
+    # Plot data
     hist.plot1d(h_data[data], ax=ax, overflow=overflow, overlay='dataset', binwnorm=binwnorm, error_opts=data_err_opts)
 
     xedges = h_data.integrate('dataset').axes()[0].edges(overflow=overflow)
 
+    # Plot MC stack
     hep.histplot(plot_info['sumw'], xedges, 
         ax=ax,
         label=plot_info['label'], 
@@ -239,6 +252,7 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
         stack=True
         )
 
+    # Plot VBF H(inv) signal if we want to
     if plot_signal:
         signal = re.compile(f'VBF_HToInvisible.*withDipoleRecoil.*{year}')
 
@@ -281,6 +295,7 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
 
     ax.yaxis.set_ticks_position('both')
 
+    # Update legend labels and plot styles
     handles, labels = ax.get_legend_handles_labels()
     for handle, label in zip(handles, labels):
         for datasetregex, new_label in legend_labels.items():
@@ -308,7 +323,8 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
 
     sumw_data, sumw2_data = h_data.values(overflow=overflow, sumw2=True)[()]
     sumw_mc = h_mc.values(overflow=overflow)[()]
-    # Add the QCD contribution to the MC
+    
+    # Add the HF-noise contribution to the background expectation
     if data_region == 'sr_vbf':
         sumw_mc = sumw_mc + h_qcd.values * mcscale
 
