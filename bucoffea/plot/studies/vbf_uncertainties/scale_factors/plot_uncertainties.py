@@ -6,20 +6,17 @@ import re
 import uproot
 import argparse
 import numpy as np
-import mplhep as hep
 
 from matplotlib import pyplot as plt
 from coffea import hist
 from tqdm import tqdm
 from klepto.archives import dir_archive
-from pprint import pprint
 
 from bucoffea.plot.util import (
     merge_extensions, 
     merge_datasets, 
     scale_xs_lumi, 
     rebin_histogram,
-    get_dataset_tag,
     )
 
 pjoin = os.path.join
@@ -76,7 +73,7 @@ def plot_uncertainty(acc,
 
     ax.get_legend().remove()
 
-    ax.text(0,1,get_dataset_tag(dataset),
+    ax.text(0,1,dataset_tag,
         fontsize=14,
         ha="left",
         va="bottom",
