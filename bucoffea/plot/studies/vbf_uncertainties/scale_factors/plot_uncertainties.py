@@ -36,6 +36,8 @@ def plot_uncertainty(acc,
     outputrootfile,
     uncertainty: str,
     dataset: str,
+    dataset_tag: str,
+    nuisance: str,
     variable: str,
     region: str,
     outdir: str,
@@ -104,14 +106,17 @@ def plot_uncertainty(acc,
 
         # Save the ratios into an output ROOT file
         ratio = h.integrate("uncertainty", unc).values()[()] / h_nom.values()[()]
-        outputrootfile[f'{dataset.replace(".*","")}_{unc}'] = (ratio, h_nom.axis("score").edges())
+
+        unc_name = f'{nuisance}_up' if 'Up' in unc else f'{nuisance}_down'
+
+        outputrootfile[f'{dataset_tag}_{unc_name}'] = (ratio, h_nom.axis("score").edges())
 
     rax.legend(title="Uncertainty")
     rax.set_ylabel("Ratio")
     rax.set_ylim(0.7,1.3)
     rax.grid(True)
 
-    filename = f'{dataset.replace(".*","")}_{uncertainty}.pdf'
+    filename = f'{dataset_tag}_{nuisance}.pdf'
     outpath = pjoin(outdir, filename)
     fig.savefig(outpath)
     plt.close(fig)
@@ -129,25 +134,36 @@ def main():
     outdir = f'./output/{outtag}'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    
-    dataset="VBF_HToInvisible.*2017"
 
+    # Uncertainty sources we will be plotting
     uncertainties = {
-        "prefire" : "VBF_HToInvisible.*M125.*2017",
-        "puSF" : "VBF_HToInvisible.*M125.*2017",
+        "prefire" : {
+            "dataset"     : "VBF_HToInvisible.*M125.*2017",
+            "dataset_tag" : "VBF_HToInvisible_2017",
+            "nuisance"    : "CMS_L1prefire_2017",
+            "region"      : "sr_vbf_no_veto_all",
+            "outfile"     : "vbf_prefire_uncs.root",
+        },
+        "puSF" : {
+            "dataset"     : "VBF_HToInvisible.*M125.*2017",
+            "dataset_tag" : "VBF_HToInvisible_2017",
+            "nuisance"    : "CMS_pileup",
+            "region"      : "sr_vbf_no_veto_all",
+            "outfile"     : "vbf_pileup_uncs.root",
+        },
     }
 
-    for uncertainty, dataset in tqdm(uncertainties.items(), desc="Plotting uncertainties"):
+    for uncertainty, item in tqdm(uncertainties.items(), desc="Plotting uncertainties"):
         # The ROOT file to save ratios of up and down variations
-        outputrootfile = uproot.recreate(
-            pjoin(outdir, f"{dataset.replace('.*', '')}_{uncertainty}.root")    
-        )
+        outputrootfile = uproot.recreate(pjoin(outdir, item["outfile"]))
 
         plot_uncertainty(acc,
             uncertainty=uncertainty,
-            dataset=dataset,
             variable=args.variable,
-            region="sr_vbf_no_veto_all",
+            dataset=item["dataset"],
+            dataset_tag=item["dataset_tag"],
+            nuisance=item["nuisance"],
+            region=item["region"],
             outdir=outdir,
             outputrootfile=outputrootfile,
         )
