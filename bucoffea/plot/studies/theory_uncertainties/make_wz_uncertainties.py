@@ -173,7 +173,7 @@ def make_ratios(infile, variable='cnn_score', years=[2017, 2018]):
     of = r.TFile(infile.replace('.root','_ratio.root'),'RECREATE')
     of.cd()
 
-    # Z(vv) / W(lv) ratios (scale + PDF variations)
+    # Scale + PDF variations on Z(vv) / W(lv) ratios
     for source in ['ewk','qcd']:
         for year in years:
             denominator = f.Get(f'w_{source}_{variable}_nominal_{year}')
@@ -187,16 +187,20 @@ def make_ratios(infile, variable='cnn_score', years=[2017, 2018]):
                 ratio.SetDirectory(of)
                 ratio.Write()
     
-    # Z(vv) / W(lv) ratios (up and down EWK variations)
+    # EWK correction variations on Z(vv) / W(lv) ratios
+    # Full NLO EWK correction is taken as the uncertainty
     for year in years:
         for vartype in ['up', 'down']:
             varied_z_name = f'z_qcd_{variable}_unc_w_ewkcorr_overz_common_{vartype}_{year}'
             varied_w = f.Get(f'w_qcd_{variable}j_unc_w_ewkcorr_overz_common_{vartype}_{year}')
+            
+            # Varied Z(vv) / W(lv) ratio
             varied_ratio = f.Get(varied_z_name).Clone(f'ratio_{varied_z_name}')
             varied_ratio.Divide(varied_w)
             varied_ratio.SetDirectory(of)
             varied_ratio.Write()  
 
+        # Nominal Z(vv) / W(lv) ratio
         nominal_z_name = f'z_qcd_{variable}_nominal_{year}'
         nominal_w = f.Get(f'w_qcd_{variable}_nominal_{year}')
         nominal_ratio = f.Get(nominal_z_name).Clone(f'ratio_{nominal_z_name}')
@@ -204,7 +208,7 @@ def make_ratios(infile, variable='cnn_score', years=[2017, 2018]):
         nominal_ratio.SetDirectory(of)    
         nominal_ratio.Write()  
 
-    # Gamma+jets / Z(vv) ratios (scale + PDF variations)
+    # Scale + PDF variations on gamma+jets / Z(vv) ratios
     for source in ['ewk','qcd']:
         for year in years:
             denominator = f.Get(f'z_{source}_{variable}_nominal_{year}')
@@ -218,16 +222,20 @@ def make_ratios(infile, variable='cnn_score', years=[2017, 2018]):
                 ratio.SetDirectory(of)
                 ratio.Write()
 
-    # Gamma+jets / Z(vv) ratios (up and down EWK variations)
+    # EWK correction variations on gamma+jets / Z(vv) ratios
+    # Full NLO EWK correction is taken as the uncertainty
     for year in years:
         for vartype in ['up', 'down']:
             varied_g_name = f'gjets_qcd_{variable}_unc_w_ewkcorr_overz_common_{vartype}_{year}'
             varied_z = f.Get(f'z_qcd_{variable}_unc_w_ewkcorr_overz_common_{vartype}_{year}')
+            
+            # Varied gamma+jets / Z(vv) ratio
             varied_ratio = f.Get(varied_g_name).Clone(f'ratio_{varied_g_name}')
             varied_ratio.Divide(varied_z)
             varied_ratio.SetDirectory(of)
             varied_ratio.Write()
 
+        # Nominal gamma+jets / Z(vv) ratio
         nominal_g_name = f'gjets_qcd_{variable}_nominal_{year}'
         nominal_z = f.Get(f'z_qcd_{variable}_nominal_{year}')
         nominal_ratio = f.Get(nominal_g_name).Clone(f'ratio_{nominal_g_name}')
@@ -274,6 +282,7 @@ def make_uncertainties(infile, variable='cnn_score', years=[2017, 2018]):
         for vartype in ['up', 'down']:
             varied_name = f'ratio_z_qcd_{variable}_unc_w_ewkcorr_overz_common_{vartype}_{year}'
             varied = f.Get(varied_name)
+            
             # Variation: (varied Z / W) / (nominal Z / W)
             variation = varied.Clone(f'uncertainty_{varied_name}')
             variation.Divide(nominal)
@@ -321,7 +330,8 @@ def make_uncertainties(infile, variable='cnn_score', years=[2017, 2018]):
         for vartype in ['up', 'down']:
             varied_name = f'ratio_gjets_qcd_{variable}_unc_w_ewkcorr_overz_common_{vartype}_{year}'
             varied = f.Get(varied_name)
-            # Variation: (varied Z / W) / (nominal Z / W)
+            
+            # Variation: (varied gamma / Z) / (nominal gamma / Z)
             variation = varied.Clone(f'uncertainty_{varied_name}')
             variation.Divide(nominal)
     
