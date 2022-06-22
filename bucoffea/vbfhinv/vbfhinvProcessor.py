@@ -62,7 +62,8 @@ from bucoffea.monojet.definitions import (
                                           theory_weights_vbf,
                                           photon_trigger_sf,
                                           photon_impurity_weights,
-                                          data_driven_qcd_dataset
+                                          data_driven_qcd_dataset,
+                                          get_nlo_ewk_weights,
                                           )
 
 from bucoffea.vbfhinv.definitions import (
@@ -1181,7 +1182,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
                                     weight=rweight[mask] * w_imp
                                 )
 
-            # Uncertainty variations
+            # Theory uncertainties on V+jets processes
             if cfg.RUN.UNCERTAINTIES.THEORY:
                 if df['is_lo_z'] or df['is_nlo_z'] or df['is_lo_z_ewk']:
                     theory_uncs = [x for x in cfg.SF.keys() if x.startswith('unc')]
@@ -1201,6 +1202,19 @@ class vbfhinvProcessor(processor.ProcessorABC):
                                 uncertainty=unc,
                                 weight=w)
 
+                # Distributions without the NLO EWK weights for the V+jets samples
+                # This is used to compute the NLO EWK uncertainty on V+jets transfer factors
+                if df['is_nlo_z'] or df['is_nlo_w'] or df['is_lo_g']:
+                    ewk_weights = get_nlo_ewk_weights(df, evaluator, gen_v_pt)
+                    
+                    # Fill the NN score and mjj distributions without the NLO EWK correction applied
+                    weight_noewk = (region_weights.weight() / ewk_weights)[mask]
+
+                    ezfill('mjj_noewk',    mjj=df['mjj'][mask],     weight=weight_noewk)
+
+                    for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                        ezfill(f'{score_type}_noewk',   score=df[score_type][:, 1][mask],   weight=weight_noewk)
+                            
             # Muons
             if '_1m_' in region or '_2m_' in region or 'no_veto' in region:
                 w_allmu = weight_shape(muons.pt[mask], rweight[mask])
