@@ -67,7 +67,7 @@ def from_coffea(inpath, outfile, variable='cnn_score', years=[2017, 2018]):
             mjj_ax = hist.Bin('mjj', r'$M_{jj}$ (GeV)', [200, 400, 600, 900, 1200, 1500, 2000, 2750, 3500, 5000])
             acc[distribution] = acc[distribution].rebin(acc[distribution].axis('mjj'), mjj_ax)
         elif variable in ['cnn_score', 'dnn_score']:
-            score_ax = Bin("score", "Neural network score", 25, 0, 1)
+            score_ax = hist.Bin("score", "Neural network score", 25, 0, 1)
             acc[distribution] = acc[distribution].rebin(acc[distribution].axis('score'), score_ax)
         else:
             raise ValueError(f'Unsupported variable name: {variable}')
