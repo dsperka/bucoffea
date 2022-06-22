@@ -21,6 +21,11 @@ from bucoffea.plot.util import (
 
 pjoin = os.path.join
 
+# Paths to the merged accumulators:
+# Analysis version
+PATH_TO_FIRST_ACC  = bucoffea_path("submission/merged_2021-10-13_vbfhinv_ULv8_05Feb21")
+# ML version
+PATH_TO_SECOND_ACC = bucoffea_path("submission/merged_2022-06-20_vbfhinv_UL_fromMiniv2_19Jun22")
 
 def parse_cli():
     parser = argparse.ArgumentParser()
@@ -117,9 +122,52 @@ def compare_integrals(acc1, acc2, distribution1, distribution2, region='sr_vbf',
     outpath = pjoin(outdir, f"integral_comparison_{region}.txt")
     with open(outpath, 'w+') as f:
         f.write(f'Data region: {region}\n')
-        f.write('Integral1: merged_2021-10-13_vbfhinv_ULv8_05Feb21\n')
-        f.write('Integral2: merged_2022-06-06_vbfhinv_ULv8_05Feb21_withJetImages\n\n')
+        f.write(f'Integral1: {os.path.basename(PATH_TO_FIRST_ACC)}\n')
+        f.write(f'Integral2: {os.path.basename(PATH_TO_SECOND_ACC)}\n\n')
         f.write(tabulate(table, headers=["Process", "Integral1", "Integral2", "Diff (%)"], floatfmt=".3f"))
+
+    print(f'Data saved at: {outpath}')
+
+
+def compare_yields_for_dataset(acc1, acc2, distribution1, distribution2, dataset, regions, year=2017):
+    """Compare yields across regions for a given dataset."""
+    acc1.load(distribution1)
+    acc2.load(distribution2)
+
+    h1 = preprocess(acc1[distribution1], acc1)
+    h2 = preprocess(acc2[distribution2], acc2)
+
+    table = []
+
+    for region in tqdm(regions, desc=f"Comparing dataset: {dataset}"):
+        hist1 = h1.integrate("region", region).integrate("dataset", dataset)
+        hist2 = h2.integrate("region", region).integrate("dataset", dataset)
+
+        integral1 = np.sum(hist1.values()[()])
+        integral2 = np.sum(hist2.values()[()])
+    
+        diff = (integral1-integral2) / integral1 * 100
+    
+        if np.isnan(diff) or np.isinf(diff):
+            continue
+
+        table.append([region, integral1, integral2, diff])
+
+
+    print(f'{dataset}\n')
+    print(tabulate(table, headers=["Region", "Integral1", "Integral2", "Diff (%)"], floatfmt=".3f"))
+
+    # Also write this out to an output file
+    outdir = './output'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    
+    outpath = pjoin(outdir, f"comparison_{dataset}.txt")
+    with open(outpath, 'w+') as f:
+        f.write(f'Dataset: {dataset}\n')
+        f.write(f'Integral1: {os.path.basename(PATH_TO_FIRST_ACC)}\n')
+        f.write(f'Integral2: {os.path.basename(PATH_TO_SECOND_ACC)}\n\n')
+        f.write(tabulate(table, headers=["Region", "Integral1", "Integral2", "Diff (%)"], floatfmt=".3f"))
 
     print(f'Data saved at: {outpath}')
 
@@ -127,17 +175,11 @@ def compare_integrals(acc1, acc2, distribution1, distribution2, region='sr_vbf',
 def main():
     args = parse_cli()
 
-    # Analysis version
-    inpath1 = bucoffea_path('submission/merged_2021-10-13_vbfhinv_ULv8_05Feb21')
-
-    # ML version
-    inpath2 = bucoffea_path('submission/merged_2022-06-06_vbfhinv_ULv8_05Feb21_withJetImages')
-
-    for inpath in [inpath1, inpath2]:
+    for inpath in [PATH_TO_FIRST_ACC, PATH_TO_SECOND_ACC]:
         assert os.path.exists(inpath), f"Cannot find input: {inpath}"
 
-    acc1 = dir_archive(inpath1)
-    acc2 = dir_archive(inpath2)
+    acc1 = dir_archive(PATH_TO_FIRST_ACC)
+    acc2 = dir_archive(PATH_TO_SECOND_ACC)
 
     for acc in [acc1, acc2]:
         acc.load('sumw')
@@ -150,15 +192,21 @@ def main():
     )
 
     dataset_for_region = {
-        'sr_vbf'    : 'MET_ver1_2017C',
-        'cr_1m_vbf' : 'MET_ver1_2017C',
-        'cr_2m_vbf' : 'MET_ver1_2017C',
+        'sr_vbf'    : 'MET_ver1_2017D',
+        'cr_1m_vbf' : 'MET_ver1_2017D',
+        'cr_2m_vbf' : 'MET_ver1_2017D',
         'cr_1e_vbf' : 'SingleElectron_ver1_2017C',
         'cr_2e_vbf' : 'SingleElectron_ver1_2017C',
         'cr_g_vbf'  : 'SinglePhoton_ver1_2017C',
     }
 
     compare_cutflows(acc1, acc2, dataset=dataset_for_region[args.region], region=args.region)
+
+    compare_yields_for_dataset(acc1, acc2,
+        'mjj', 'cnn_score',
+        dataset='MET_ver1_2017D',
+        regions=['sr_vbf', 'cr_1m_vbf', 'cr_2m_vbf'],
+    )
 
 if __name__ == '__main__':
     main()
