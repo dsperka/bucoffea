@@ -170,13 +170,15 @@ class vbfhinvProcessor(processor.ProcessorABC):
         df['has_lhe_v_pt'] = df['is_lo_w'] | df['is_lo_z'] | df['is_nlo_z'] | df['is_nlo_w'] | df['is_lo_g'] | df['is_lo_w_ewk'] | df['is_lo_z_ewk']
         df['is_data'] = is_data(dataset)
 
+        # Generator-level boson pt for V+jets
         gen_v_pt = None
         if df['is_lo_w'] or df['is_lo_z'] or df['is_nlo_z'] or df['is_nlo_w'] or df['is_lo_z_ewk'] or df['is_lo_w_ewk']:
             gen = setup_gen_candidates(df)
             dressed = setup_dressed_gen_candidates(df)
             fill_gen_v_info(df, gen, dressed)
             gen_v_pt = df['gen_v_pt_combined']
-        elif df['is_lo_g']:
+        
+        elif df['is_lo_g'] or df['is_lo_g_ewk']:
             gen = setup_gen_candidates(df)
             all_gen_photons = gen[(gen.pdg==22)]
             prompt_mask = (all_gen_photons.status==1)&(all_gen_photons.flag&1==1)
