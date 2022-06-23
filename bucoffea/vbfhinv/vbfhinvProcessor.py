@@ -37,6 +37,7 @@ from bucoffea.helpers.dataset import (
                                       is_lo_g,
                                       is_lo_w,
                                       is_lo_z,
+                                      is_lo_g_ewk,
                                       is_lo_w_ewk,
                                       is_lo_z_ewk,
                                       is_nlo_w,
@@ -62,7 +63,8 @@ from bucoffea.monojet.definitions import (
                                           theory_weights_vbf,
                                           photon_trigger_sf,
                                           photon_impurity_weights,
-                                          data_driven_qcd_dataset
+                                          data_driven_qcd_dataset,
+                                          get_nlo_ewk_weights,
                                           )
 
 from bucoffea.vbfhinv.definitions import (
@@ -162,18 +164,21 @@ class vbfhinvProcessor(processor.ProcessorABC):
         df['is_lo_w_ewk'] = is_lo_w_ewk(dataset)
         df['is_lo_z_ewk'] = is_lo_z_ewk(dataset)
         df['is_lo_g'] = is_lo_g(dataset)
+        df['is_lo_g_ewk'] = is_lo_g_ewk(dataset)
         df['is_nlo_z'] = is_nlo_z(dataset)
         df['is_nlo_w'] = is_nlo_w(dataset)
-        df['has_lhe_v_pt'] = df['is_lo_w'] | df['is_lo_z'] | df['is_nlo_z'] | df['is_nlo_w'] | df['is_lo_g'] | df['is_lo_w_ewk'] | df['is_lo_z_ewk']
+        df['has_lhe_v_pt'] = df['is_lo_w'] | df['is_lo_z'] | df['is_nlo_z'] | df['is_nlo_w'] | df['is_lo_g'] | df['is_lo_w_ewk'] | df['is_lo_z_ewk'] | df['is_lo_g_ewk']
         df['is_data'] = is_data(dataset)
 
+        # Generator-level boson pt for V+jets
         gen_v_pt = None
         if df['is_lo_w'] or df['is_lo_z'] or df['is_nlo_z'] or df['is_nlo_w'] or df['is_lo_z_ewk'] or df['is_lo_w_ewk']:
             gen = setup_gen_candidates(df)
             dressed = setup_dressed_gen_candidates(df)
             fill_gen_v_info(df, gen, dressed)
             gen_v_pt = df['gen_v_pt_combined']
-        elif df['is_lo_g']:
+        
+        elif df['is_lo_g'] or df['is_lo_g_ewk']:
             gen = setup_gen_candidates(df)
             all_gen_photons = gen[(gen.pdg==22)]
             prompt_mask = (all_gen_photons.status==1)&(all_gen_photons.flag&1==1)
@@ -1181,9 +1186,11 @@ class vbfhinvProcessor(processor.ProcessorABC):
                                     weight=rweight[mask] * w_imp
                                 )
 
-            # Uncertainty variations
+            # Theory uncertainties on V+jets processes
             if cfg.RUN.UNCERTAINTIES.THEORY:
-                if df['is_lo_z'] or df['is_nlo_z'] or df['is_lo_z_ewk']:
+                # Scale and PDF uncertainties for Z(vv) / W(lv) and gamma+jets / Z(vv) ratios
+                # Information will be stored in Z(vv) and gamma+jets histograms
+                if df['is_lo_z'] or df['is_nlo_z'] or df['is_lo_z_ewk'] or df['is_lo_g'] or df['is_lo_g_ewk']:
                     theory_uncs = [x for x in cfg.SF.keys() if x.startswith('unc')]
                     for unc in theory_uncs:
                         reweight = evaluator[unc](gen_v_pt)
@@ -1201,6 +1208,19 @@ class vbfhinvProcessor(processor.ProcessorABC):
                                 uncertainty=unc,
                                 weight=w)
 
+                # Distributions without the NLO EWK weights for the V+jets samples
+                # This is used to compute the NLO EWK uncertainty on V+jets transfer factors
+                if df['is_nlo_z'] or df['is_nlo_w'] or df['is_lo_g']:
+                    ewk_weights = get_nlo_ewk_weights(df, evaluator, gen_v_pt)
+                    
+                    # Fill the NN score and mjj distributions without the NLO EWK correction applied
+                    weight_noewk = (region_weights.weight() / ewk_weights)[mask]
+
+                    ezfill('mjj_noewk',    mjj=df['mjj'][mask],     weight=weight_noewk)
+
+                    for score_type in cfg.NN_MODELS.UNCERTAINTIES:
+                        ezfill(f'{score_type}_noewk',   score=df[score_type][:, 1][mask],   weight=weight_noewk)
+                            
             # Muons
             if '_1m_' in region or '_2m_' in region or 'no_veto' in region:
                 w_allmu = weight_shape(muons.pt[mask], rweight[mask])

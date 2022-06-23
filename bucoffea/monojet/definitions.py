@@ -840,6 +840,22 @@ def theory_weights_vbf(weights, df, evaluator, gen_v_pt, mjj):
 
     return weights
 
+def get_nlo_ewk_weights(df, evaluator, gen_v_pt):
+    """
+    Returns the NLO EWK corrections for the given dataset.
+    If the given dataset is not V+jets, returns an array of ones.
+    """
+    if df['is_lo_z'] or df['is_nlo_z']:
+        ewk_weights = evaluator["ewk_nlo_z"](gen_v_pt)
+    elif df['is_lo_w'] or  df['is_nlo_w']:
+        ewk_weights = evaluator["ewk_nlo_w"](gen_v_pt)
+    elif df['is_lo_g']:
+        ewk_weights = evaluator["ewk_nlo_g"](gen_v_pt)
+    else:
+        ewk_weights = np.ones(df.size)
+
+    return ewk_weights
+
 def pileup_weights(weights, df, evaluator, cfg):
 
     if cfg.SF.PILEUP.MODE == 'nano':
