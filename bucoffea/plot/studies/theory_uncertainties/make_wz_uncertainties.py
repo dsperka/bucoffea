@@ -61,6 +61,8 @@ def from_coffea(inpath, outfile, variable='cnn_score', years=[2017, 2018]):
                                             )
         scale_xs_lumi(acc[distribution])
         acc[distribution] = merge_datasets(acc[distribution])
+        print(distribution)
+        pprint(acc[distribution].axis('dataset').identifiers())
 
         # Do rebinning based on the variable
         if variable == 'mjj':
@@ -109,7 +111,7 @@ def from_coffea(inpath, outfile, variable='cnn_score', years=[2017, 2018]):
 
         # EWK variations for QCD W(lv)
         # Get EWK down variation first
-        h_w_unc_ewk = acc['mjj_noewk'][re.compile(f'WJetsToLNu_Pt-FXFX_{year}')].integrate('region', 'sr_vbf_no_veto_all').integrate('dataset')
+        h_w_unc_ewk = acc[f'{variable}_noewk'][re.compile(f'WJetsToLNu_Pt-FXFX_{year}')].integrate('region', 'sr_vbf_no_veto_all').integrate('dataset')
         f[f'w_qcd_{variable}_unc_w_ewkcorr_overz_common_down_{year}'] = export1d(h_w_unc_ewk)
 
         # Get EWK up variation

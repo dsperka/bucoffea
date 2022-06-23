@@ -37,6 +37,7 @@ from bucoffea.helpers.dataset import (
                                       is_lo_g,
                                       is_lo_w,
                                       is_lo_z,
+                                      is_lo_g_ewk,
                                       is_lo_w_ewk,
                                       is_lo_z_ewk,
                                       is_nlo_w,
@@ -163,6 +164,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
         df['is_lo_w_ewk'] = is_lo_w_ewk(dataset)
         df['is_lo_z_ewk'] = is_lo_z_ewk(dataset)
         df['is_lo_g'] = is_lo_g(dataset)
+        df['is_lo_g_ewk'] = is_lo_g_ewk(dataset)
         df['is_nlo_z'] = is_nlo_z(dataset)
         df['is_nlo_w'] = is_nlo_w(dataset)
         df['has_lhe_v_pt'] = df['is_lo_w'] | df['is_lo_z'] | df['is_nlo_z'] | df['is_nlo_w'] | df['is_lo_g'] | df['is_lo_w_ewk'] | df['is_lo_z_ewk']
@@ -1184,7 +1186,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
 
             # Theory uncertainties on V+jets processes
             if cfg.RUN.UNCERTAINTIES.THEORY:
-                if df['is_lo_z'] or df['is_nlo_z'] or df['is_lo_z_ewk']:
+                if df['is_lo_z'] or df['is_nlo_z'] or df['is_lo_z_ewk'] or df['is_lo_g'] or df['is_lo_g_ewk']:
                     theory_uncs = [x for x in cfg.SF.keys() if x.startswith('unc')]
                     for unc in theory_uncs:
                         reweight = evaluator[unc](gen_v_pt)
