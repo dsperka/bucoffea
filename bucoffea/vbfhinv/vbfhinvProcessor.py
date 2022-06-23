@@ -167,7 +167,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
         df['is_lo_g_ewk'] = is_lo_g_ewk(dataset)
         df['is_nlo_z'] = is_nlo_z(dataset)
         df['is_nlo_w'] = is_nlo_w(dataset)
-        df['has_lhe_v_pt'] = df['is_lo_w'] | df['is_lo_z'] | df['is_nlo_z'] | df['is_nlo_w'] | df['is_lo_g'] | df['is_lo_w_ewk'] | df['is_lo_z_ewk']
+        df['has_lhe_v_pt'] = df['is_lo_w'] | df['is_lo_z'] | df['is_nlo_z'] | df['is_nlo_w'] | df['is_lo_g'] | df['is_lo_w_ewk'] | df['is_lo_z_ewk'] | df['is_lo_g_ewk']
         df['is_data'] = is_data(dataset)
 
         # Generator-level boson pt for V+jets
