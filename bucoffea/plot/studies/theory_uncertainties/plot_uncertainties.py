@@ -34,6 +34,13 @@ def plot_theory_uncertainties(args):
         'ratio_gjets_ewk' : r'EWK $\gamma + jets$ / $Z(\nu\nu)$',
     }
 
+    # Colors per uncertainty
+    color_mapping = {
+        'muf' : '#31a354',
+        'mur' : '#08306b',
+        'pdf' : '#fc4e2a',
+        'ewkcorr' : '#feb24c',
+    }
 
     for year in tqdm(args.years, desc="Plotting theory uncertainties"):
         uncertainties = [
@@ -54,11 +61,17 @@ def plot_theory_uncertainties(args):
                 temp = re.findall('(muf|mur|pdf|ewkcorr).*(up|down)', unc)[0]
                 label = '_'.join(temp)
 
+                kwargs = {
+                    'label' : label,
+                    'linestyle' : '-' if temp[1] == 'up' else '--',
+                    'color' : color_mapping[temp[0]],
+                }
+
                 hep.histplot(
                     histogram.values,
                     histogram.edges,
                     ax=ax,
-                    label=label,
+                    **kwargs,
                 )
             
             ax.legend(ncol=2, title='Uncertainty')
