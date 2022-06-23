@@ -1186,6 +1186,8 @@ class vbfhinvProcessor(processor.ProcessorABC):
 
             # Theory uncertainties on V+jets processes
             if cfg.RUN.UNCERTAINTIES.THEORY:
+                # Scale and PDF uncertainties for Z(vv) / W(lv) and gamma+jets / Z(vv) ratios
+                # Information will be stored in Z(vv) and gamma+jets histograms
                 if df['is_lo_z'] or df['is_nlo_z'] or df['is_lo_z_ewk'] or df['is_lo_g'] or df['is_lo_g_ewk']:
                     theory_uncs = [x for x in cfg.SF.keys() if x.startswith('unc')]
                     for unc in theory_uncs:
