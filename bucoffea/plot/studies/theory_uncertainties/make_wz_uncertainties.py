@@ -61,8 +61,6 @@ def from_coffea(inpath, outfile, variable='cnn_score', years=[2017, 2018]):
                                             )
         scale_xs_lumi(acc[distribution])
         acc[distribution] = merge_datasets(acc[distribution])
-        print(distribution)
-        pprint(acc[distribution].axis('dataset').identifiers())
 
         # Do rebinning based on the variable
         if variable == 'mjj':
@@ -74,7 +72,6 @@ def from_coffea(inpath, outfile, variable='cnn_score', years=[2017, 2018]):
         else:
             raise ValueError(f'Unsupported variable name: {variable}')
 
-    pprint(acc[distribution].axis('dataset').identifiers())
     f = uproot.recreate(outfile)
     
     for year in years:
@@ -194,7 +191,7 @@ def make_ratios(infile, variable='cnn_score', years=[2017, 2018]):
     for year in years:
         for vartype in ['up', 'down']:
             varied_z_name = f'z_qcd_{variable}_unc_w_ewkcorr_overz_common_{vartype}_{year}'
-            varied_w = f.Get(f'w_qcd_{variable}j_unc_w_ewkcorr_overz_common_{vartype}_{year}')
+            varied_w = f.Get(f'w_qcd_{variable}_unc_w_ewkcorr_overz_common_{vartype}_{year}')
             
             # Varied Z(vv) / W(lv) ratio
             varied_ratio = f.Get(varied_z_name).Clone(f'ratio_{varied_z_name}')
