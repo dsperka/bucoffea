@@ -13,6 +13,7 @@ from bucoffea.helpers.git import git_rev_parse, git_diff
 
 pjoin = os.path.join
 
+
 def parse_commandline():
     parser = argparse.ArgumentParser()
     parser.add_argument('inpath', type=str, help='Input path to use.')
@@ -20,14 +21,36 @@ def parse_commandline():
     parser.add_argument('--channel', type=str, help='Channel to make inputs for.', default='vbfhinv')
     parser.add_argument('--unblind', action='store_true', help='Include signal region data')
     parser.add_argument('--years', nargs='*', default=[2017, 2018], help='The years to prepare the limit input for')
-    parser.add_argument('--one_fifth_unblind', action='store_true', help='1/5th unblinding: Scale the MC in signal region by 1/5')
+    parser.add_argument('--one-fifth-unblind', action='store_true', help='1/5th unblinding: Scale the MC in signal region by 1/5')
     parser.add_argument('--mcscales', type=str, default=None, help='An optional txt file for storing the MC scales per region')
     args = parser.parse_args()
 
     if not os.path.isdir(args.inpath):
         raise RuntimeError(f"Commandline argument is not a directory: {args.inpath}")
 
+    if args.one_fifth_unblind and args.unblind:
+        raise IOError("--one-fifth-unblind and --unblind cannot be specified at the same time.")
+
     return args
+
+
+def dump_info(args, outdir) -> None:
+    """
+    Dump repo version info and command line arguments to an INFO.txt file under outdir.
+    """
+    infofile = pjoin(outdir, 'INFO.txt')
+    with open(infofile, 'w+') as f:
+        f.write(f'Limit input creation: {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}\n')
+        f.write('Repo information:\n')
+
+        f.write(git_rev_parse()+'\n')
+        f.write(git_diff()+'\n')
+
+        f.write('Command line arguments:\n\n')
+        cli = vars(args)
+        for arg, val in cli.items():
+            f.write(f'{arg}: {val}\n')
+
 
 def get_mc_scales(infile: str) -> Dict[str, float]:
     """
@@ -45,6 +68,7 @@ def get_mc_scales(infile: str) -> Dict[str, float]:
             scales[row[0]] = float(row[1])
 
     return scales
+
 
 def main():
     args = parse_commandline()
@@ -70,18 +94,7 @@ def main():
         pprint(mcscales)
 
     # Store the command line arguments in the INFO.txt file
-    infofile = pjoin(outdir, 'INFO.txt')
-    with open(infofile, 'w+') as f:
-        f.write(f'Limit input creation: {datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}\n')
-        f.write('Repo information:\n')
-
-        f.write(git_rev_parse()+'\n')
-        f.write(git_diff()+'\n')
-
-        f.write('Command line arguments:\n\n')
-        cli = vars(args)
-        for arg, val in cli.items():
-            f.write(f'{arg}: {val}\n')
+    dump_info(args, outdir)
 
     # Create limit input ROOT files per channel specified from the command line
     for channel in args.channel.split(','):

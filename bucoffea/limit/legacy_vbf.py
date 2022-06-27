@@ -23,9 +23,8 @@ from legacy_monojet import suppress_negative_bins
 pjoin = os.path.join
 
 
-def datasets(year, unblind=False):
+def datasets(year, include_sr_data=False):
     """Datasets to read for each region."""
-    
     data = {
         'cr_1m_vbf' : re.compile(f'MET_{year}'),
         'cr_2m_vbf' : re.compile(f'MET_{year}'),
@@ -36,8 +35,8 @@ def datasets(year, unblind=False):
     }
     
     # If we're unblinding, we want the data in the signal region as well
-    if unblind:
-        data['sr_vbf'] = f'MET_{year}'
+    if include_sr_data:
+        data['sr_vbf'] = re.compile(f'MET_{year}')
 
     mc = {
         'sr_vbf_no_veto_all' : re.compile(f'(ttH_HToInvisible_M125.*|WH_WToQQ_Hinv_M125.*|ZH_ZToQQ_HToInv.*M125.*|(VBF|GluGlu)_HToInvisible.*M125.*|ggZH.*|ZNJetsToNuNu_M-50_LHEFilterPtZ-FXFX.*|EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
@@ -215,7 +214,9 @@ def legacy_limit_input_vbf(acc,
                 'cr_g_vbf',
                 'sr_vbf_no_veto_all'
                 ]
-    if unblind:
+    
+    # If unblinding, add observed data from the signal region
+    if unblind or one_fifth_unblind:
         regions.append("sr_vbf")
 
     if not os.path.exists(outdir):
@@ -246,7 +247,7 @@ def legacy_limit_input_vbf(acc,
         with open(infofile, 'w+') as infof:
             # Output ROOT file we're going to save (per year)
             f = uproot.recreate(pjoin(outdir, f'legacy_limit_vbf_{year}.root'))
-            data, mc = datasets(year, unblind=unblind)
+            data, mc = datasets(year, include_sr_data=unblind or one_fifth_unblind)
 
             # Loop over regions and make histograms
             for region in regions:
@@ -262,15 +263,7 @@ def legacy_limit_input_vbf(acc,
 
                 for dataset in map(str, ih.axis('dataset').identifiers()):
                     if not (data[region].match(dataset) or mc[region].match(dataset)):
-                        # Insert dummy data for the signal region if we're not unblinding
-                        if region == 'sr_vbf' and re.match(f'ZNJetsToNuNu.*FXFX.*{year}', dataset) and not unblind:
-                            th1 = export_coffea_histogram(ih.integrate('dataset', dataset), axname=axname)
-                            histo_name = 'signal_data'
-                            f[histo_name] = th1
-                        
-                        # Just skip this dataset
-                        else:
-                            continue
+                        continue
 
                     h_cof = ih.integrate('dataset', dataset)
                     
@@ -302,7 +295,7 @@ def legacy_limit_input_vbf(acc,
                 infof.write('\n\n')
         
         # Add signal region data, if we're not unblinding
-        if not unblind:
+        if not (unblind or one_fifth_unblind):
             f[f'{legacy_region_name("sr_vbf")}_data'] = f[f'{legacy_region_name("sr_vbf")}_qcdzjets']
     
     # Merge the 2017 and 2018 histograms into a single file

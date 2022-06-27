@@ -449,15 +449,12 @@ class vbfhinvProcessor(processor.ProcessorABC):
             selection.add('one_jet_forward_one_jet_central', one_jet_forward_one_jet_central.any())
             selection.add('two_hf_jets', two_hf_jets.any())
         
-        # Mask for 1/5th unlbinding
-        one_fifth_mask = ~pass_all
-
-        # Only pick each 5 entry in data
-        # one_fifth_mask[::5] = True
-        # if df['is_data']:
-        #     selection.add('one_fifth_mask', one_fifth_mask)
-        # else:
-        #     selection.add('one_fifth_mask', pass_all)
+        # Mask for 1/5th unblinding:
+        # Only pick 1 event out of each 5 events in data, for MC do nothing
+        if df['is_data']:
+            selection.add('one_fifth_mask', df['event'] % 5 == 0)
+        else:
+            selection.add('one_fifth_mask', pass_all)
 
         # Dimuon CR
         leadmuon_index=muons.pt.argmax()
