@@ -23,7 +23,7 @@ from legacy_monojet import suppress_negative_bins
 pjoin = os.path.join
 
 
-def datasets(year, unblind=False):
+def datasets(year, include_sr_data=False):
     """Datasets to read for each region."""
     
     data = {
@@ -36,7 +36,7 @@ def datasets(year, unblind=False):
     }
     
     # If we're unblinding, we want the data in the signal region as well
-    if unblind or one_fifth_unblind:
+    if include_sr_data:
         data['sr_vbf'] = f'MET_{year}'
 
     mc = {
@@ -246,7 +246,7 @@ def legacy_limit_input_vbf(acc,
         with open(infofile, 'w+') as infof:
             # Output ROOT file we're going to save (per year)
             f = uproot.recreate(pjoin(outdir, f'legacy_limit_vbf_{year}.root'))
-            data, mc = datasets(year, unblind=unblind)
+            data, mc = datasets(year, include_sr_data=unblind or one_fifth_unblind)
 
             # Loop over regions and make histograms
             for region in regions:
