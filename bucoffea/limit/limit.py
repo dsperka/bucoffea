@@ -20,12 +20,15 @@ def parse_commandline():
     parser.add_argument('--channel', type=str, help='Channel to make inputs for.', default='vbfhinv')
     parser.add_argument('--unblind', action='store_true', help='Include signal region data')
     parser.add_argument('--years', nargs='*', default=[2017, 2018], help='The years to prepare the limit input for')
-    parser.add_argument('--one_fifth_unblind', action='store_true', help='1/5th unblinding: Scale the MC in signal region by 1/5')
+    parser.add_argument('--one-fifth-unblind', action='store_true', help='1/5th unblinding: Scale the MC in signal region by 1/5')
     parser.add_argument('--mcscales', type=str, default=None, help='An optional txt file for storing the MC scales per region')
     args = parser.parse_args()
 
     if not os.path.isdir(args.inpath):
         raise RuntimeError(f"Commandline argument is not a directory: {args.inpath}")
+
+    if args.one_fifth_unblind and args.unblind:
+        raise IOError("--one-fifth-unblind and --unblind cannot be specified at the same time.")
 
     return args
 
