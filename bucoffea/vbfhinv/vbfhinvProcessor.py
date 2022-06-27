@@ -452,12 +452,11 @@ class vbfhinvProcessor(processor.ProcessorABC):
         # Mask for 1/5th unlbinding
         one_fifth_mask = ~pass_all
 
-        # Only pick each 5 entry in data
-        # one_fifth_mask[::5] = True
-        # if df['is_data']:
-        #     selection.add('one_fifth_mask', one_fifth_mask)
-        # else:
-        #     selection.add('one_fifth_mask', pass_all)
+        # Only pick 1 out of each 5 event in data
+        if df['is_data']:
+            selection.add('one_fifth_mask', df['event'] % 5 == 0)
+        else:
+            selection.add('one_fifth_mask', pass_all)
 
         # Dimuon CR
         leadmuon_index=muons.pt.argmax()

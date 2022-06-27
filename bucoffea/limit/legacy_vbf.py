@@ -36,7 +36,7 @@ def datasets(year, unblind=False):
     }
     
     # If we're unblinding, we want the data in the signal region as well
-    if unblind:
+    if unblind or one_fifth_unblind:
         data['sr_vbf'] = f'MET_{year}'
 
     mc = {
@@ -262,8 +262,8 @@ def legacy_limit_input_vbf(acc,
 
                 for dataset in map(str, ih.axis('dataset').identifiers()):
                     if not (data[region].match(dataset) or mc[region].match(dataset)):
-                        # Insert dummy data for the signal region if we're not unblinding
-                        if region == 'sr_vbf' and re.match(f'ZNJetsToNuNu.*FXFX.*{year}', dataset) and not unblind:
+                        # Insert dummy data for the signal region if we're not unblinding: QCD Z(vv)
+                        if region == 'sr_vbf' and re.match(f'ZNJetsToNuNu.*FXFX.*{year}', dataset) and not (unblind or one_fifth_unblind):
                             th1 = export_coffea_histogram(ih.integrate('dataset', dataset), axname=axname)
                             histo_name = 'signal_data'
                             f[histo_name] = th1
