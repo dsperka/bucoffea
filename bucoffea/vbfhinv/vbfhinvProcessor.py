@@ -449,9 +449,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
             selection.add('one_jet_forward_one_jet_central', one_jet_forward_one_jet_central.any())
             selection.add('two_hf_jets', two_hf_jets.any())
         
-        # Mask for 1/5th unlbinding
-        one_fifth_mask = ~pass_all
-
+        # Mask for 1/5th unlbinding:
         # Only pick 1 out of each 5 event in data
         if df['is_data']:
             selection.add('one_fifth_mask', df['event'] % 5 == 0)
