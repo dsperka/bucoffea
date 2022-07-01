@@ -1,0 +1,315 @@
+Commit hash: 163ee708bb866053e6c4218bd8b661d1603b09fc
+
+git diff:
+
+diff --git a/vbfml/config/dense_model.yml b/vbfml/config/dense_model.yml
+index 86c8370..4ef574e 100644
+--- a/vbfml/config/dense_model.yml
++++ b/vbfml/config/dense_model.yml
+@@ -1,7 +1,7 @@
+ architecture: dense
+ training_parameters:
+-  batch_size: 25
+-  batch_buffer_size: 500000
++  batch_size: 10000
++  batch_buffer_size: 100
+   train_size: 0.7
+   scale_features: standard
+   shuffle: true
+@@ -15,9 +15,23 @@ features:
+ - mjj
+ - dphijj
+ - detajj
+-
++- mjj_maxmjj
++- dphijj_maxmjj
++- detajj_maxmjj
++- recoil_pt
++- dphi_ak40_met
++- dphi_ak41_met
++- ht
++- leadak4_pt
++- leadak4_eta
++- trailak4_pt
++- trailak4_eta
++- leadak4_mjjmax_pt
++- leadak4_mjjmax_eta
++- trailak4_mjjmax_pt
++- trailak4_mjjmax_eta
+ arch_parameters:
+-  n_features: 3
++  n_features: 18
+   n_classes: 2
+   n_nodes: [18,10,5,2]
+   dropout: 0.2
+diff --git a/vbfml/input/sequences.py b/vbfml/input/sequences.py
+index df0d015..70975d2 100644
+--- a/vbfml/input/sequences.py
++++ b/vbfml/input/sequences.py
+@@ -258,7 +258,6 @@ class MultiDatasetSequence(Sequence):
+ 
+     def dataset_labels(self) -> "list[str]":
+         """Return list of labels of all data sets in this Sequence."""
+-        # print(sorted(list(set(dataset.label for dataset in self.datasets.values()))))
+         return sorted(list(set(dataset.label for dataset in self.datasets.values())))
+ 
+     def dataset_names(self) -> "list[str]":
+@@ -337,7 +336,6 @@ class MultiDatasetSequence(Sequence):
+         """Add a new data set to the Sequence."""
+         if dataset.name in self.datasets:
+             raise IndexError(f"Dataset already exists: '{dataset.name}'.")
+-        # print(dataset)
+         self.datasets[dataset.name] = dataset
+         self._datasets_changed()
+ 
+@@ -375,10 +373,7 @@ class MultiDatasetSequence(Sequence):
+         """Create encoding of string labels <-> integer class indices"""
+         labels = self.dataset_labels()
+         label_encoding = OrderedDict(enumerate(labels))
+-        # print(labels)
+-        # print(label_encoding)
+         label_encoding.update({v: k for k, v in label_encoding.items()})
+-        # print(label_encoding)
+         self.label_encoding = label_encoding
+ 
+     def _datasets_changed(self):
+diff --git a/vbfml/models.py b/vbfml/models.py
+index b66dd14..3d04b5a 100644
+--- a/vbfml/models.py
++++ b/vbfml/models.py
+@@ -1,4 +1,6 @@
++from math import nan
+ import numpy as np
++from tqdm import tqdm
+ 
+ from tensorflow.keras.layers import (
+     Dense,
+@@ -206,21 +208,30 @@ class FullyConnectedNN(nn.Module):
+         """
+         Save the state dictionary of the model under outpath.
+         """
++        print('saving dic')
+         torch.save(self.state_dict(), outpath)
+ 
+     def compute_weighted_loss(
+         self,
+-        features: torch.Tensor,
+-        true_labels: torch.Tensor,
+-        weights: torch.Tensor,
++        features,
++        true_labels,
++        weights,
+         loss_criterion,
++        sequence_type,
+     ) -> torch.Tensor:
+         """
+         Compute the weighted loss for a batch of data.
+         """
+         predicted_labels = self(features)
++        #print(predicted_labels)
+         raw_loss = loss_criterion(predicted_labels, true_labels)
+-        loss = torch.sum(weights * raw_loss) / torch.sum(weights)
++        loss = torch.sum(weights * raw_loss) / (torch.sum(weights))
++        # if sequence_type == 'val':
++        #     print('validation loss')
++        #     print(loss)
++        #     print(torch.sum(weights)/ torch.numel(weights))
++        
++
+         return loss
+ 
+     def iterate_training(
+@@ -230,13 +241,14 @@ class FullyConnectedNN(nn.Module):
+         weights: torch.Tensor,
+         optimizer,
+         loss_criterion,
++        sequence_type,
+     ) -> torch.Tensor:
+         """
+         One iteration of training on a batch of data.
+         """
+         self.zero_grad()
+         loss = self.compute_weighted_loss(
+-            features, true_labels, weights, loss_criterion
++            features, true_labels, weights, loss_criterion,sequence_type,
+         )
+         loss.backward()
+         optimizer.step()
+@@ -270,12 +282,15 @@ class FullyConnectedNN(nn.Module):
+             optimizer,
+             factor=0.1,
+             patience=5,
+-            threshold=1e-2,
++            threshold=0.0001,
+             verbose=True,
+             cooldown=2,
+             min_lr=1e-5,
+         )
+-
++        # s = training_sequence 
++        # q = validation_sequence
++        # training_sequence=q
++        # validation_sequence=s
+         for epoch in range(num_epochs):
+             training_loss = 0
+             validation_loss = 0
+@@ -284,14 +299,18 @@ class FullyConnectedNN(nn.Module):
+             self.train(True)
+ 
+             # Run training for this epoch
+-            for batch in training_sequence:
++            for bidx, batch in tqdm(enumerate(training_sequence)):
+                 x_train, y_train, w_train = batch
++                #print('weight_entering')
++                #print(w_train)
++                #print('training loss')
+                 loss = self.iterate_training(
+                     torch.Tensor(x_train).to(device),
+                     torch.Tensor(y_train).to(device),
+                     torch.Tensor(w_train).to(device),
+                     optimizer,
+                     criterion,
++                    'train',
+                 )
+                 training_loss += loss.item()
+ 
+@@ -299,6 +318,7 @@ class FullyConnectedNN(nn.Module):
+             self.train(False)
+ 
+             # Run validation
++            print('validation loss')
+             for batch in validation_sequence:
+                 x_val, y_val, w_val = batch
+                 loss = self.compute_weighted_loss(
+@@ -306,6 +326,7 @@ class FullyConnectedNN(nn.Module):
+                     torch.Tensor(y_val).to(device),
+                     torch.Tensor(w_val).to(device),
+                     criterion,
++                    'val',
+                 )
+                 validation_loss += loss.item()
+ 
+diff --git a/vbfml/scripts/train.py b/vbfml/scripts/train.py
+index 71ad0e6..ca65f9a 100755
+--- a/vbfml/scripts/train.py
++++ b/vbfml/scripts/train.py
+@@ -3,6 +3,7 @@ import copy
+ import os
+ import re
+ import warnings
++import shutil
+ import numpy as np
+ import pandas as pd
+ from datetime import datetime
+@@ -99,7 +100,12 @@ def setup(
+ 
+     all_datasets = load_datasets_bucoffea(input_dir)
+ 
++    #save config files to training directory
++    
++    
++
+     # Get datasets and corresponding labels from datasets.yml
++    training_directory = ctx.obj["TRAINING_DIRECTORY"]
+     datasets_path = vbfml_path("config/datasets/datasets.yml")
+     dataset_config = DatasetAndLabelConfiguration(datasets_path)
+ 
+@@ -158,11 +164,16 @@ def setup(
+     # Build model
+     # We're assuming that if architecture = "dense", this is a PyTorch model
+     use_pytorch = mconfig.get("architecture") == "dense"
++    
++    #save model config to training directory
++    save_config(training_directory,use_pytorch)
+ 
+     model = ModelFactory.build(mconfig)
+     if use_pytorch:
+         print("\nPyTorch DNN model:")
+         print(f"\n{model}\n")
++        with open(os.path.join(training_directory,"model_structure.txt"), "w+") as f:
++            print(model,file=f)
+ 
+     # Keras-related model operations
+     else:
+@@ -182,7 +193,7 @@ def setup(
+         )
+         model.summary()
+ 
+-    training_directory = ctx.obj["TRAINING_DIRECTORY"]
++   
+ 
+     def prepend_path(fname):
+         return os.path.join(training_directory, fname)
+@@ -237,6 +248,22 @@ def setup(
+         plot_file = os.path.join(plot_dir, "model.png")
+         plot_model(model, to_file=plot_file, show_shapes=True, show_layer_names=True)
+ 
++def save_config(training_directory,use_torch):
++    """
++     saves configuration files of model to training directory 
++
++    """
++    datasets_path = vbfml_path("config/datasets/datasets.yml")
++    model_config_path = vbfml_path("config/dense_model.yml")
++    outdir = os.path.join(os.path.abspath(training_directory), "config")
++    if not os.path.exists(outdir):
++        os.makedirs(outdir)
++    shutil.copyfile(datasets_path,os.path.join(outdir,'datasets.yml'))
++    if use_torch:
++        shutil.copyfile(model_config_path, os.path.join(outdir,'dense_model.yml'))
++    else:
++        shutil.copyfile(model_config_path, os.path.join(outdir,'convolutional_model.yml'))
++
+ 
+ @cli.command()
+ @click.pass_context
+@@ -290,6 +317,11 @@ def train(
+ 
+     # Run PyTorch training
+     if arch == "dense":
++        # Append Model Archeticture information
++        with open(prepend_path("model_structure.txt"), "a+") as f:
++            f.write(model)
++            f.write("\n"+"learning rate = " + learning_rate + "\n" +"num_epochs = "+num_epochs)
++
+         history = model.run_training(
+             training_sequence=training_sequence,
+             validation_sequence=validation_sequence,
+diff --git a/vbfml/training/analysis.py b/vbfml/training/analysis.py
+index 153ab43..5bc9cc8 100644
+--- a/vbfml/training/analysis.py
++++ b/vbfml/training/analysis.py
+@@ -257,6 +257,7 @@ class TrainingAnalyzer(TrainingAnalyzerBase):
+             labels = labels_onehot.argmax(axis=1)
+ 
+             scores = model.predict(feature_scaler.transform(features))
++            print(scores)
+             predicted_scores.append(scores)
+             validation_scores.append(labels_onehot)
+             sample_weights.append(weights)
+diff --git a/vbfml/training/data.py b/vbfml/training/data.py
+index a4dae67..cd8c3f3 100644
+--- a/vbfml/training/data.py
++++ b/vbfml/training/data.py
+@@ -29,7 +29,16 @@ class TrainingLoader:
+             )
+         elif self._arch == "dense":
+             import torch
+-
++            from vbfml.util import (
++            ModelConfiguration,
++            ModelFactory,
++            )
++            #mconfig = ModelConfiguration('/afs/cern.ch/user/a/abhussei/vbfml_alp/vbfml/config/dense_model.yml')
++            #use_pytorch = mconfig.get("architecture") == "dense"
++            #model = ModelFactory.build(mconfig)
++            #model.load_state_dict(torch.load(os.path.join(self._directory, "model_state_dict.pt")))
++            #print('loaded dictionary of model')
++            #return model
+             return torch.load(os.path.join(self._directory, "model.pt"))
+ 
+         raise RuntimeError(f"Cannot load model of given architecture: {self._arch}")
+
+git diff --staged:
+
+

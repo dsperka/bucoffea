@@ -1,0 +1,17 @@
+FullyConnectedNN(
+  (layer_0): Linear(in_features=18, out_features=18, bias=True)
+  (layer_1): BatchNorm1d(18, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (layer_2): Linear(in_features=18, out_features=10, bias=True)
+  (layer_3): Dropout(p=0.2, inplace=False)
+  (layer_4): BatchNorm1d(10, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (layer_5): Linear(in_features=10, out_features=5, bias=True)
+  (layer_6): Dropout(p=0.2, inplace=False)
+  (layer_7): BatchNorm1d(5, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (layer_8): Linear(in_features=5, out_features=2, bias=True)
+  (layer_9): Dropout(p=0.2, inplace=False)
+  (layer_10): Linear(in_features=2, out_features=2, bias=True)
+  (layer_11): BatchNorm1d(2, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+)
+
+learning rate = 0.001
+num_epochs = 20
