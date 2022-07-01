@@ -712,10 +712,10 @@ class vbfhinvProcessor(processor.ProcessorABC):
             # Set up DNN features for each region and obtain predictions
             dnn_features = {}
             for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
-                dnn_features[feature_name] = df[feature_name][mask]
+                dnn_features[feature_name] = df[feature_name]
 
             dnn_features = pd.DataFrame(dnn_features)
-            dnn_features = prepare_data_for_dnn(dnn_features)
+            dnn_features = prepare_data_for_dnn(dnn_features, mask=mask)
 
             # Get the predictions from this model
             df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())
@@ -777,6 +777,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
 
                     # Signal-like score from the neural networks
                     output['tree_float16'][region]["cnn_score"]         +=  processor.column_accumulator(np.float16(df["cnn_score"][:, 1][mask]))                    
+                    output['tree_float16'][region]["dnn_score"]         +=  processor.column_accumulator(np.float16(df["dnn_score"][:, 1][mask]))
 
                     output['tree_float16'][region]["htmiss"]            +=  processor.column_accumulator(np.float16(df['htmiss'][mask]))
                     output['tree_float16'][region]["ht"]                +=  processor.column_accumulator(np.float16(df['ht'][mask]))
@@ -1004,15 +1005,14 @@ class vbfhinvProcessor(processor.ProcessorABC):
             ezfill('mjj',                mjj=df["mjj"][mask],      weight=rweight[mask] )
 
             # Dijet quantities scaled to zero mean and unit variance
-            ezfill('mjj_transformed',       transformed=dnn_features["mjj"].to_numpy(),         weight=rweight[mask] )
-            ezfill('detajj_transformed',    transformed=dnn_features["detajj"].to_numpy(),      weight=rweight[mask] )
-            ezfill('dphijj_transformed',    transformed=dnn_features["dphijj"].to_numpy(),      weight=rweight[mask] )
+            ezfill('mjj_transformed',       transformed=dnn_features["mjj"].to_numpy()[mask],         weight=rweight[mask] )
+            ezfill('detajj_transformed',    transformed=dnn_features["detajj"].to_numpy()[mask],      weight=rweight[mask] )
+            ezfill('dphijj_transformed',    transformed=dnn_features["dphijj"].to_numpy()[mask],      weight=rweight[mask] )
 
             # Save signal-like score distribution
             ezfill('cnn_score',          score=df["cnn_score"][:, 1][mask],     weight=rweight[mask])
             ezfill('cnn_score_mjj',      score=df["cnn_score"][:, 1][mask],     mjj=df["mjj"][mask],    weight=rweight[mask])
-
-            ezfill('dnn_score',          score=df["dnn_score"][:, 1],     weight=rweight[mask])
+            ezfill('dnn_score',          score=df["dnn_score"][:, 1][mask],     weight=rweight[mask])
 
             rweight_nopref = region_weights.partial_weight(exclude=exclude+['prefire'])
             ezfill('mjj_nopref',                mjj=df["mjj"][mask],      weight=rweight_nopref[mask] )

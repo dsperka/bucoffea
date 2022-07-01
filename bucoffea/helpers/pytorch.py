@@ -19,18 +19,23 @@ def load_pytorch_state_dict(model_dir: str):
 
     return torch.load(model_file)
 
-def prepare_data_for_dnn(df: pd.DataFrame) -> pd.DataFrame:
+def prepare_data_for_dnn(df: pd.DataFrame, mask: np.ndarray) -> pd.DataFrame:
     """
     Scales the data to be ready for the deep neural network to zero mean and unit variance.
     Ignores NaN and infinity values in data, returns the data as a Pandas DataFrame.
+
+    "mask" parameter specifies the subset of events to compute the mean and standard deviation for.
 
     Note that the input data MUST be passed in as a Pandas DataFrame.
     """
     features = df.replace([np.inf, -np.inf], np.nan)
 
+    # We will compute mean and std only for the events we care about per region, hence the mask
+    features_to_compute = features.loc[mask]
+
     # Compute mean and standard deviation per feature, ignoring NaN values
-    mean = np.nanmean(features, axis=0)
-    std = np.nanstd(features, axis=0)
+    mean = np.nanmean(features_to_compute, axis=0)
+    std = np.nanstd(features_to_compute, axis=0)
 
     # Do the feature transformation
     features = (features - mean) / std
