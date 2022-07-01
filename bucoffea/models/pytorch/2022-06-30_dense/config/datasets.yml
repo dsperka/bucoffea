@@ -1,0 +1,18 @@
+# Datasets and labels corresponding to different classes
+datasets:
+  signal_17: 
+    regex: VBF_HToInvisible_M125_withDipoleRecoil_pow_pythia8_2017
+  bkg_17: 
+    regex: ((WJetsToLNu_Pt-\d+To.*|Z\dJetsToNuNu_M-50_LHEFilterPtZ-\d+To\d+)_MatchEWPDG20-amcatnloFXFX_2017|EWK.*2017)
+
+# Dataset scales per process, to scale number of events for a given process by a factor
+scales:
+  qcd_v:
+    regex: (WJetsToLNu_Pt-\d+To.*|Z\dJetsToNuNu_M-50_LHEFilterPtZ-\d+To\d+)_MatchEWPDG20-amcatnloFXFX_2017
+    scale: 1.0
+  ewk_v:
+    regex: EWK.*2017
+    scale: 1.0
+  vbf_h:
+    regex: VBF_HToInvisible_M125_withDipoleRecoil_pow_pythia8_2017
+    scale: 1.0

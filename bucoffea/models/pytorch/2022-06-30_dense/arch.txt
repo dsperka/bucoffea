@@ -1,0 +1,8 @@
+Arch parameters:
+
+Parameter Name    Parameter Value
+----------------  -----------------
+n_features        18
+n_classes         2
+n_nodes           [18, 10, 5, 2]
+dropout           0.2

@@ -319,6 +319,23 @@ class vbfhinvProcessor(processor.ProcessorABC):
         df['dphijj'] = dphi(diak4.i0.phi.min(), diak4.i1.phi.max())
         df['detajj'] = np.abs(diak4.i0.eta - diak4.i1.eta).max()
 
+        # Features from the dijet pair with highest invariant mass (to be used by the DNN)
+        diak4_all = ak4.distincts()
+        highest_mass_diak4 = diak4_all[diak4_all.mass.argmax()]
+        df["mjj_maxmjj"] = highest_mass_diak4.mass.max()
+        df["dphijj_maxmjj"] = dphi(highest_mass_diak4.i0.phi.min(), highest_mass_diak4.i1.phi.max())
+        df["detajj_maxmjj"] = (highest_mass_diak4.i0.eta.min() - highest_mass_diak4.i1.eta.max())
+        
+        df["leadak4_pt"] = diak4.i0.pt.max()
+        df["leadak4_eta"] = diak4.i0.eta.max()
+        df["trailak4_pt"] = diak4.i1.pt.max()
+        df["trailak4_eta"] = diak4.i1.eta.max()
+
+        df["trailak4_mjjmax_pt"] = highest_mass_diak4.i1.pt.max()
+        df["trailak4_mjjmax_eta"] = highest_mass_diak4.i1.eta.max()
+        df["leadak4_mjjmax_pt"] = highest_mass_diak4.i0.pt.max()
+        df["leadak4_mjjmax_eta"] = highest_mass_diak4.i0.eta.max()
+
         df['ak4_mt0'] = mt(diak4.i0.pt, diak4.i0.phi, met_pt, met_phi).max()
         df['ak4_mt1'] = mt(diak4.i1.pt, diak4.i1.phi, met_pt, met_phi).max()
 
@@ -604,15 +621,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
         jetimages_norm = prepare_data_for_cnn(jet_images)
         df['cnn_score'] = model.predict(jetimages_norm)
 
-        # Get predictions from the deep neural network model
-        # Retrieve the list of features we're going to use, and scale them
-        dnn_features = {}
-        for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
-            dnn_features[feature_name] = df[feature_name]
-        
-        dnn_features = pd.DataFrame(dnn_features)
-        dnn_features = prepare_data_for_dnn(dnn_features)
-
+        # DNN stuff:
         # Create an instance of the PyTorch model with the correct arch parameters
         dnn_model = FullyConnectedNN(
             **dict(cfg.NN_MODELS.DEEPNET.ARCH_PARAMETERS)
@@ -620,9 +629,6 @@ class vbfhinvProcessor(processor.ProcessorABC):
         
         # Load the state dictionary (set of weights + biases) of a previously trained model
         dnn_model.load_state_dict(load_pytorch_state_dict(cfg.NN_MODELS.DEEPNET.PATH))
-
-        # Get the predictions from this model
-        df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())
 
         for region, cuts in regions.items():
             if not re.match(cfg.RUN.REGIONREGEX, region):
@@ -632,6 +638,17 @@ class vbfhinvProcessor(processor.ProcessorABC):
             if region == 'sr_vbf_no_pu':
                 exclude = ['pileup']
             region_weights = copy.deepcopy(weights)
+
+            # Set up DNN features for each region and obtain predictions
+            dnn_features = {}
+            for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
+                dnn_features[feature_name] = df[feature_name]
+
+            dnn_features = pd.DataFrame(dnn_features)
+            dnn_features = prepare_data_for_dnn(dnn_features)
+
+            # Get the predictions from this model
+            df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())
 
             if not df['is_data']:
                 ### Trigger weights
