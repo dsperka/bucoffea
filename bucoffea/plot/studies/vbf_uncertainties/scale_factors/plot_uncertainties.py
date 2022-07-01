@@ -24,7 +24,7 @@ pjoin = os.path.join
 def parse_cli():
     parser = argparse.ArgumentParser()
     parser.add_argument('inpath', help='Path to the merged accumulator input.')
-    parser.add_argument('-v', '--variable', help='The variable to plot the uncertainties for.', default='cnn_score', choices=['cnn_score','mjj'])
+    parser.add_argument('-v', '--variable', help='The variable to plot the uncertainties for.', default='cnn_score', choices=['cnn_score','dnn_score','mjj'])
     args = parser.parse_args()
     return args
 
