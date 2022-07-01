@@ -68,6 +68,9 @@ binnings = {
     'dphijr' : Bin("dphi", r"min $\Delta\phi(j,recoil)$", 50, 0, 3.5),
     'dimuon_mass' : hist.Bin('dilepton_mass',r'M($\mu^{+}\mu^{-}$)',30,60,120),
     'dielectron_mass' : hist.Bin('dilepton_mass',r'M($e^{+}e^{-}$)',30,60,120),
+    'mjj_transformed' : hist.Bin('transformed', r'Rescaled $M_{jj}$', 50, -5, 5),
+    'detajj_transformed' : hist.Bin('transformed', r'Rescaled $\Delta\eta_{jj}$', 50, -5, 5),
+    'dphijj_transformed' : hist.Bin('transformed', r'Rescaled $\Delta\phi_{jj}$', 50, -5, 5),
 }
 
 ylims = {
