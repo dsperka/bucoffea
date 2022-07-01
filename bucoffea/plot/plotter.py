@@ -164,12 +164,7 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
     acc.load(distribution)
     h = acc[distribution]
 
-    # Some sanity checks before moving on, to see if data and MC are included in the histogram
-    if not h[data].identifiers('dataset'):
-        raise RuntimeError(f'Could not find data samples in histogram: {h}') 
-    if not h[mc].identifiers('dataset'):
-        raise RuntimeError(f'Could not find MC samples in histogram: {h}') 
-
+    # Set up overflow bin for mjj
     overflow = 'none'
     if distribution == 'mjj':
         overflow = 'over'
