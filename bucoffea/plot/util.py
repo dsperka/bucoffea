@@ -3,9 +3,12 @@ import os
 import shutil
 import random
 import re
+import csv
 import string
+
 from collections import defaultdict
 from pprint import pprint
+from typing import Dict
 
 import numpy as np
 import yaml
@@ -42,6 +45,23 @@ def klepto_load(inpath):
                     memsize=1e3,
                     )
     return acc
+
+def get_mc_scales(infile: str) -> Dict[str, float]:
+    """
+    From the given input file containing MC scales per region,
+    write them to a dictionary and return the dict.
+    """
+    scales = {}
+    # If an input file is not provided, just return an empty dict
+    if not infile:
+        return scales
+    
+    with open(infile, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            scales[row[0]] = float(row[1])
+
+    return scales
 
 def rebin_histogram(h: hist.Hist, variable: str) -> hist.Hist:
     """Rebin a given histogram."""

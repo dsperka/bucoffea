@@ -3,15 +3,15 @@ import argparse
 import warnings
 import os
 import re
-import numpy as np
-import mplhep as hep
 
-from bucoffea.plot.plotter import plot_data_mc
 from klepto.archives import dir_archive
 from pprint import pprint
 from distributions import distributions
 from datetime import datetime
 from tqdm import tqdm
+
+from bucoffea.plot.plotter import plot_data_mc
+from bucoffea.plot.util import get_mc_scales
 
 pjoin = os.path.join
 
@@ -43,15 +43,12 @@ def make_plot(args):
             'cr_g_vbf' : re.compile(f'(GJets_DR-0p4.*|VBFGamma.*|QCD_data.*|WJetsToLNu.*HT.*).*{year}'),
         }
 
+        # Dictionary having the region -> scale factor mapping, by default this is an empty dict
+        mc_scales = get_mc_scales(args.mcscales)
+
         for data_region in data.keys():
             if not re.match(args.region, data_region):
                 continue
-
-            # Parameter to scale the MC by a constant normalization factor
-            mcscale = args.mcscale
-            # If we want to do 1/5th unblinding on the data
-            if args.one_fifth_unblind and data_region == 'sr_vbf':
-                mcscale *= 0.2
 
             # Pick the signal region with veto weights (instead of hard-lepton veto)
             # for the VBF signal region
@@ -59,6 +56,16 @@ def make_plot(args):
                 mc_region = 'sr_vbf_no_veto_all'
             else:
                 mc_region = data_region
+
+            # Figure out the MC scaling to apply for this region, default is 1
+            mcscale = mc_scales.get(mc_region, 1)
+            if mcscale != 1:
+                print(f'INFO: Region {mc_region}')
+                print(f'INFO: MC scale {mcscale}')
+            
+            # If we want to do 1/5th unblinding on the data
+            if args.one_fifth_unblind and data_region == 'sr_vbf':
+                mcscale *= 0.2
 
             for distribution in tqdm(distributions[data_region], desc="Plotting distributions"):
                 if not re.match(args.distribution, distribution):
@@ -90,7 +97,7 @@ def commandline():
     parser.add_argument('--fformats', nargs='*', default=['pdf'], help='Output file format for the plots, default is PDF only.')
     parser.add_argument('--jes', action='store_true', help='Plot JES+JER uncertainty bands.')
     parser.add_argument('--eoyxs', action='store_true', help='Use EOY XS for normalization, otherwise use UL XS.')
-    parser.add_argument('--mcscale', type=float, default=1.0, help='Scale the MC by the given value.')
+    parser.add_argument('--mcscales', type=str, default=None, help='An optional txt file for storing the MC scales per region.')
     args = parser.parse_args()
     return args
 
