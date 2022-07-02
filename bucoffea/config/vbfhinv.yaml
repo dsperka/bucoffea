@@ -295,14 +295,14 @@ default:
     apply_categorized_sf: True
     apply_ewk_corr_to_signal: True
     uncertainties:
-      prefire_sf: False
+      prefire_sf: True
       btag_sf: False
-      pileup_sf: False
+      pileup_sf: True
       electron_sf: False
       electron_trigger_sf: False
       muon_sf: False
       veto_weights: False
-      theory: False
+      theory: True
   triggers:
     ht:
       gammaeff:

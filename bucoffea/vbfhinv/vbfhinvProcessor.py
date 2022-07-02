@@ -639,17 +639,6 @@ class vbfhinvProcessor(processor.ProcessorABC):
                 exclude = ['pileup']
             region_weights = copy.deepcopy(weights)
 
-            # Set up DNN features for each region and obtain predictions
-            dnn_features = {}
-            for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
-                dnn_features[feature_name] = df[feature_name]
-
-            dnn_features = pd.DataFrame(dnn_features)
-            dnn_features = prepare_data_for_dnn(dnn_features)
-
-            # Get the predictions from this model
-            df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())
-
             if not df['is_data']:
                 ### Trigger weights
                 if re.match(r'cr_(\d+)e.*', region):
@@ -720,6 +709,17 @@ class vbfhinvProcessor(processor.ProcessorABC):
 
             mask = selection.all(*cuts)
 
+            # Set up DNN features for each region and obtain predictions
+            dnn_features = {}
+            for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
+                dnn_features[feature_name] = df[feature_name]
+
+            dnn_features = pd.DataFrame(dnn_features)
+            dnn_features = prepare_data_for_dnn(dnn_features, mask=mask)
+
+            # Get the predictions from this model
+            df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())
+
             if cfg.RUN.SAVE.TREE:
                 if region in cfg.RUN.SAVE.TREE_REGIONS: 
                     output['tree_int64'][region]["event"]             +=  processor.column_accumulator(df["event"][mask])
@@ -777,7 +777,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
 
                     # Signal-like score from the neural networks
                     output['tree_float16'][region]["cnn_score"]         +=  processor.column_accumulator(np.float16(df["cnn_score"][:, 1][mask]))                    
-                    output['tree_float16'][region]["dnn_score"]         +=  processor.column_accumulator(np.float16(df["dnn_score"][:, 1][mask]))                    
+                    output['tree_float16'][region]["dnn_score"]         +=  processor.column_accumulator(np.float16(df["dnn_score"][:, 1][mask]))
 
                     output['tree_float16'][region]["htmiss"]            +=  processor.column_accumulator(np.float16(df['htmiss'][mask]))
                     output['tree_float16'][region]["ht"]                +=  processor.column_accumulator(np.float16(df['ht'][mask]))
@@ -1012,7 +1012,6 @@ class vbfhinvProcessor(processor.ProcessorABC):
             # Save signal-like score distribution
             ezfill('cnn_score',          score=df["cnn_score"][:, 1][mask],     weight=rweight[mask])
             ezfill('cnn_score_mjj',      score=df["cnn_score"][:, 1][mask],     mjj=df["mjj"][mask],    weight=rweight[mask])
-
             ezfill('dnn_score',          score=df["dnn_score"][:, 1][mask],     weight=rweight[mask])
 
             rweight_nopref = region_weights.partial_weight(exclude=exclude+['prefire'])

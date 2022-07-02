@@ -68,6 +68,9 @@ binnings = {
     'dphijr' : Bin("dphi", r"min $\Delta\phi(j,recoil)$", 50, 0, 3.5),
     'dimuon_mass' : hist.Bin('dilepton_mass',r'M($\mu^{+}\mu^{-}$)',30,60,120),
     'dielectron_mass' : hist.Bin('dilepton_mass',r'M($e^{+}e^{-}$)',30,60,120),
+    'mjj_transformed' : hist.Bin('transformed', r'Rescaled $M_{jj}$', 50, -5, 5),
+    'detajj_transformed' : hist.Bin('transformed', r'Rescaled $\Delta\eta_{jj}$', 50, -5, 5),
+    'dphijj_transformed' : hist.Bin('transformed', r'Rescaled $\Delta\phi_{jj}$', 50, -5, 5),
 }
 
 ylims = {
@@ -161,12 +164,7 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
     acc.load(distribution)
     h = acc[distribution]
 
-    # Some sanity checks before moving on, to see if data and MC are included in the histogram
-    if not h[data].identifiers('dataset'):
-        raise RuntimeError(f'Could not find data samples in histogram: {h}') 
-    if not h[mc].identifiers('dataset'):
-        raise RuntimeError(f'Could not find MC samples in histogram: {h}') 
-
+    # Set up overflow bin for mjj
     overflow = 'none'
     if distribution == 'mjj':
         overflow = 'over'
