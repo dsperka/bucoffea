@@ -67,7 +67,7 @@ def make_plot(args):
             if args.one_fifth_unblind and data_region == 'sr_vbf':
                 mcscale *= 0.2
 
-            for distribution in tqdm(distributions[data_region], desc="Plotting distributions"):
+            for distribution in tqdm(distributions[data_region], desc=f"Plotting for {data_region}"):
                 if not re.match(args.distribution, distribution):
                     continue
                 try:
