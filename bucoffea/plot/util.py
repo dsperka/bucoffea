@@ -66,7 +66,8 @@ def get_mc_scales(infile: str) -> Dict[str, float]:
 def rebin_histogram(h: hist.Hist, variable: str) -> hist.Hist:
     """Rebin a given histogram."""
     new_bins = {
-        "cnn_score": hist.Bin("score", "CNN score", 25, 0, 1)
+        "cnn_score": hist.Bin("score", "CNN score", 25, 0, 1),
+        "dnn_score": hist.Bin("score", "DNN score", 25, 0, 1),
     }
     if variable in new_bins:
         new_bin = new_bins[variable]
