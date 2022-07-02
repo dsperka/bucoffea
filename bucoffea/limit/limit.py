@@ -10,6 +10,7 @@ from typing import Dict
 from pprint import pprint
 
 from bucoffea.helpers.git import git_rev_parse, git_diff
+from bucoffea.plot.util import get_mc_scales
 
 pjoin = os.path.join
 
@@ -50,24 +51,6 @@ def dump_info(args, outdir) -> None:
         cli = vars(args)
         for arg, val in cli.items():
             f.write(f'{arg}: {val}\n')
-
-
-def get_mc_scales(infile: str) -> Dict[str, float]:
-    """
-    From the given input file containing MC scales per region,
-    write them to a dictionary and return the dict.
-    """
-    scales = {}
-    # If an input file is not provided, just return an empty dict
-    if not infile:
-        return scales
-    
-    with open(infile, 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            scales[row[0]] = float(row[1])
-
-    return scales
 
 
 def main():
