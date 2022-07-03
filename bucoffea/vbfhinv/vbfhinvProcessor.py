@@ -1002,9 +1002,25 @@ class vbfhinvProcessor(processor.ProcessorABC):
 
             ezfill('dphijj',             dphi=df["dphijj"][mask],   weight=rweight[mask] )
             ezfill('detajj',             deta=df["detajj"][mask],   weight=rweight[mask] )
-            ezfill('mjj',                mjj=df["mjj"][mask],      weight=rweight[mask] )
+            ezfill('mjj',                mjj=df["mjj"][mask],       weight=rweight[mask] )
 
-            # Dijet quantities scaled to zero mean and unit variance
+            # Fill and save histograms for the features that are used by the DNN
+            if cfg.NN_MODELS.DEEPNET.SAVE_FEATURES:
+                ezfill('dphi_ak40_met',      dphi=df["dphi_ak40_met"][mask],    weight=rweight[mask] )
+                ezfill('dphi_ak41_met',      dphi=df["dphi_ak41_met"][mask],    weight=rweight[mask] )
+                ezfill('ht',      ht=df["ht"][mask],    weight=rweight[mask] )
+
+                # Quantities from the max-dijet pair
+                ezfill('mjj_maxmjj',         mjj=df["mjj_maxmjj"][mask],      weight=rweight[mask] )
+                ezfill('detajj_maxmjj',      deta=df["detajj_maxmjj"][mask],  weight=rweight[mask] )
+                ezfill('dphijj_maxmjj',      dphi=df["dphijj_maxmjj"][mask],  weight=rweight[mask] )
+
+                ezfill('ak4_pt0_maxmjj',     jetpt=df["leadak4_mjjmax_pt"][mask],      weight=rweight[mask] )
+                ezfill('ak4_eta0_maxmjj',    jeteta=df["leadak4_mjjmax_eta"][mask],    weight=rweight[mask] )
+                ezfill('ak4_pt1_maxmjj',     jetpt=df["trailak4_mjjmax_pt"][mask],     weight=rweight[mask] )
+                ezfill('ak4_eta1_maxmjj',    jeteta=df["trailak4_mjjmax_eta"][mask],   weight=rweight[mask] )
+
+            # Dijet quantities scaled to zero mean and unit variance (i.e. inputs to the DNN)
             ezfill('mjj_transformed',       transformed=dnn_features["mjj"].to_numpy()[mask],         weight=rweight[mask] )
             ezfill('detajj_transformed',    transformed=dnn_features["detajj"].to_numpy()[mask],      weight=rweight[mask] )
             ezfill('dphijj_transformed',    transformed=dnn_features["dphijj"].to_numpy()[mask],      weight=rweight[mask] )
