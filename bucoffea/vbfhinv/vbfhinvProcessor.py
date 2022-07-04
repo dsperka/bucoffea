@@ -12,7 +12,7 @@ from bucoffea.helpers.tensorflow import (
 
 from bucoffea.helpers.pytorch import (
     load_pytorch_state_dict,
-    prepare_data_for_dnn,
+    scale_features_for_dnn,
     FullyConnectedNN,
 )
 
@@ -710,12 +710,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
             mask = selection.all(*cuts)
 
             # Set up DNN features for each region and obtain predictions
-            dnn_features = {}
-            for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
-                dnn_features[feature_name] = df[feature_name]
-
-            dnn_features = pd.DataFrame(dnn_features)
-            dnn_features = prepare_data_for_dnn(dnn_features, mask=mask)
+            dnn_features = scale_features_for_dnn(df, cfg, region=region)
 
             # Get the predictions from this model
             df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())

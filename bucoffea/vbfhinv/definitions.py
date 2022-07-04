@@ -350,7 +350,7 @@ def vbfhinv_regions(cfg):
         common_cuts.append('mjj_tight')
 
     regions = {}
-    regions['inclusive'] = ['inclusive']
+    # regions['inclusive'] = ['inclusive']
 
     # Signal regions (v = mono-V, j = mono-jet)
     regions['sr_vbf'] = ['trig_met','metphihemextveto','hornveto'] + common_cuts + ['dpfcalo_sr', 'eemitigation']
