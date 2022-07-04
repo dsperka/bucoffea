@@ -28,6 +28,7 @@ warnings.filterwarnings(action='ignore', category=RuntimeWarning, module='coffea
 
 REGION_TAGS = {
     'sr_vbf' : 'Signal Region',
+    'cr_vbf_qcd' : 'HF-noise CR',
     'cr_1m_vbf' : r'$W(\mu\nu)$ CR',
     'cr_1e_vbf' : r'$W(e\nu)$ CR',
     'cr_2m_vbf' : r'$Z(\mu\mu)$ CR',
@@ -138,6 +139,10 @@ def main():
             'data' : 'MET_2017', 
             'mc'   : '(VBF_HToInvisible.*M125|ZNJetsToNuNu_M-50_LHEFilterPtZ-FXFX.*|EWK.*|WJetsToLNu_Pt-FXFX.*).*2017', 
         },
+        'cr_vbf_qcd' : {
+            'data'   : 'MET_2017', 
+            'mc'     : '(ZNJetsToNuNu_M-50_LHEFilterPtZ-FXFX.*|EWK.*|WJetsToLNu_Pt-FXFX.*).*2017', 
+        },
         'cr_1m_vbf': {
             'data' : 'MET_2017',
             'mc'   : '(EWKW.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*2017',
@@ -146,11 +151,11 @@ def main():
             'data' : 'MET_2017',
             'mc'   : '(EWKZ.*ZToLL.*|DYJetsToLL_Pt_FXFX.*).*2017',
         },
-        'cr_1e_vbf' : {
+        'cr_1e_vbf': {
             'data' : 'EGamma_2017',
             'mc'   : '(EWKW.*|EWKZ.*ZToLL.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*2017',
         },
-        'cr_2e_vbf' : {
+        'cr_2e_vbf': {
             'data' : 'EGamma_2017',
             'mc'   : '(EWKZ.*ZToLL.*|DYJetsToLL_Pt_FXFX.*).*2017',
         },
