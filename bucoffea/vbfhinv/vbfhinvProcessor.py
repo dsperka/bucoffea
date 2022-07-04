@@ -326,15 +326,15 @@ class vbfhinvProcessor(processor.ProcessorABC):
         df["dphijj_maxmjj"] = dphi(highest_mass_diak4.i0.phi.min(), highest_mass_diak4.i1.phi.max())
         df["detajj_maxmjj"] = (highest_mass_diak4.i0.eta.min() - highest_mass_diak4.i1.eta.max())
         
-        df["leadak4_pt"] = diak4.i0.pt.max()
-        df["leadak4_eta"] = diak4.i0.eta.max()
-        df["trailak4_pt"] = diak4.i1.pt.max()
-        df["trailak4_eta"] = diak4.i1.eta.max()
+        df["ak4_pt0"] = diak4.i0.pt.max()
+        df["ak4_eta0"] = diak4.i0.eta.max()
+        df["ak4_pt1"] = diak4.i1.pt.max()
+        df["ak4_eta1"] = diak4.i1.eta.max()
 
-        df["trailak4_mjjmax_pt"] = highest_mass_diak4.i1.pt.max()
-        df["trailak4_mjjmax_eta"] = highest_mass_diak4.i1.eta.max()
-        df["leadak4_mjjmax_pt"] = highest_mass_diak4.i0.pt.max()
-        df["leadak4_mjjmax_eta"] = highest_mass_diak4.i0.eta.max()
+        df["ak4_pt0_maxmjj"] = highest_mass_diak4.i0.pt.max()
+        df["ak4_eta0_maxmjj"] = highest_mass_diak4.i0.eta.max()
+        df["ak4_pt1_maxmjj"] = highest_mass_diak4.i1.pt.max()
+        df["ak4_eta1_maxmjj"] = highest_mass_diak4.i1.eta.max()
 
         df['ak4_mt0'] = mt(diak4.i0.pt, diak4.i0.phi, met_pt, met_phi).max()
         df['ak4_mt1'] = mt(diak4.i1.pt, diak4.i1.phi, met_pt, met_phi).max()
@@ -1015,10 +1015,10 @@ class vbfhinvProcessor(processor.ProcessorABC):
                 ezfill('detajj_maxmjj',      deta=df["detajj_maxmjj"][mask],  weight=rweight[mask] )
                 ezfill('dphijj_maxmjj',      dphi=df["dphijj_maxmjj"][mask],  weight=rweight[mask] )
 
-                ezfill('ak4_pt0_maxmjj',     jetpt=df["leadak4_mjjmax_pt"][mask],      weight=rweight[mask] )
-                ezfill('ak4_eta0_maxmjj',    jeteta=df["leadak4_mjjmax_eta"][mask],    weight=rweight[mask] )
-                ezfill('ak4_pt1_maxmjj',     jetpt=df["trailak4_mjjmax_pt"][mask],     weight=rweight[mask] )
-                ezfill('ak4_eta1_maxmjj',    jeteta=df["trailak4_mjjmax_eta"][mask],   weight=rweight[mask] )
+                ezfill('ak4_pt0_maxmjj',     jetpt=df["ak4_pt0_maxmjj"][mask],      weight=rweight[mask] )
+                ezfill('ak4_eta0_maxmjj',    jeteta=df["ak4_eta0_maxmjj"][mask],    weight=rweight[mask] )
+                ezfill('ak4_pt1_maxmjj',     jetpt=df["ak4_pt1_maxmjj"][mask],     weight=rweight[mask] )
+                ezfill('ak4_eta1_maxmjj',    jeteta=df["ak4_eta1_maxmjj"][mask],   weight=rweight[mask] )
 
             # Dijet quantities scaled to zero mean and unit variance (i.e. inputs to the DNN)
             ezfill('mjj_transformed',       transformed=dnn_features["mjj"].to_numpy()[mask],         weight=rweight[mask] )
