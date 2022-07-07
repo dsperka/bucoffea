@@ -68,6 +68,14 @@ def rebin_histogram(h: hist.Hist, variable: str) -> hist.Hist:
     new_bins = {
         "cnn_score": hist.Bin("score", "CNN score", 25, 0, 1),
         "dnn_score": hist.Bin("score", "DNN score", 25, 0, 1),
+        "mjj_transformed": hist.Bin("transformed", r"Scaled $M_{jj}$", 50, -5, 5),
+        "detajj_transformed": hist.Bin("transformed", r"Scaled $\Delta\eta_{jj}$", 50, -5, 5),
+        "mjj" : hist.Bin("mjj", r"$M_{jj}$ (GeV)", 50, 0, 7500),
+        "detajj" : hist.Bin("deta", r"$\Delta\eta_{jj}$", 25, 0, 10),
+        "mjj_maxmjj" : hist.Bin("mjj", r"$M_{jj}$ (GeV) (Max $m_{jj}$ pair)", 50, 0, 7500),
+        "detajj_maxmjj" : hist.Bin("deta", r"$\Delta\eta_{jj}$ (Max $m_{jj}$ pair)", 25, 0, 10),
+        "recoil" : hist.Bin("recoil", r"Recoil (GeV)", 50, 0, 2000),
+        "ht" : hist.Bin("ht", r"$H_{T}$ (GeV)", 50, 0, 4000),
     }
     if variable in new_bins:
         new_bin = new_bins[variable]
@@ -77,8 +85,17 @@ def rebin_histogram(h: hist.Hist, variable: str) -> hist.Hist:
 
 def get_dataset_tag(dataset: str) -> str:
     mapping = {
+        "MET_2017" : r"MET 2017",
+        "EGamma_2017"  : r"EGamma 2017",
         "VBF_HToInv.*" : r"VBF H(inv) 2017",
         "ZNJetsToNuNu_M-50.*FXFX.*" : r"QCD $Z(\nu\nu)$ 2017",
+        "WJetsToLNu_Pt.*FXFX.*" : r"QCD $W(\ell\nu)$ 2017",
+        "DYJetsToLL_Pt.*FXFX.*" : r"QCD $Z(\ell\ell)$ 2017",
+        "EWKZ2Jets.*ZToNuNu.*"  : r"EWK $Z(\nu\nu)$ 2017",
+        "EWKZ2Jets.*ZToLL.*"    : r"EWK $Z(\ell\ell)$ 2017",
+        "EWKW2Jets.*WToLNu.*"   : r"EWK $W(\ell\nu)$ 2017",
+        "GJets_DR-0p4.*" : r"QCD $\gamma$+jets 2017",
+        "VBFGamma.*"     : r"EWK $\gamma$+jets 2017",
     }
 
     for regex, tag in mapping.items():

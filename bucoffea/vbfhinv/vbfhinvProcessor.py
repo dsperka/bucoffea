@@ -12,7 +12,7 @@ from bucoffea.helpers.tensorflow import (
 
 from bucoffea.helpers.pytorch import (
     load_pytorch_state_dict,
-    prepare_data_for_dnn,
+    scale_features_for_dnn,
     FullyConnectedNN,
 )
 
@@ -326,15 +326,15 @@ class vbfhinvProcessor(processor.ProcessorABC):
         df["dphijj_maxmjj"] = dphi(highest_mass_diak4.i0.phi.min(), highest_mass_diak4.i1.phi.max())
         df["detajj_maxmjj"] = (highest_mass_diak4.i0.eta.min() - highest_mass_diak4.i1.eta.max())
         
-        df["leadak4_pt"] = diak4.i0.pt.max()
-        df["leadak4_eta"] = diak4.i0.eta.max()
-        df["trailak4_pt"] = diak4.i1.pt.max()
-        df["trailak4_eta"] = diak4.i1.eta.max()
+        df["ak4_pt0"] = diak4.i0.pt.max()
+        df["ak4_eta0"] = diak4.i0.eta.max()
+        df["ak4_pt1"] = diak4.i1.pt.max()
+        df["ak4_eta1"] = diak4.i1.eta.max()
 
-        df["trailak4_mjjmax_pt"] = highest_mass_diak4.i1.pt.max()
-        df["trailak4_mjjmax_eta"] = highest_mass_diak4.i1.eta.max()
-        df["leadak4_mjjmax_pt"] = highest_mass_diak4.i0.pt.max()
-        df["leadak4_mjjmax_eta"] = highest_mass_diak4.i0.eta.max()
+        df["ak4_pt0_maxmjj"] = highest_mass_diak4.i0.pt.max()
+        df["ak4_eta0_maxmjj"] = highest_mass_diak4.i0.eta.max()
+        df["ak4_pt1_maxmjj"] = highest_mass_diak4.i1.pt.max()
+        df["ak4_eta1_maxmjj"] = highest_mass_diak4.i1.eta.max()
 
         df['ak4_mt0'] = mt(diak4.i0.pt, diak4.i0.phi, met_pt, met_phi).max()
         df['ak4_mt1'] = mt(diak4.i1.pt, diak4.i1.phi, met_pt, met_phi).max()
@@ -710,12 +710,7 @@ class vbfhinvProcessor(processor.ProcessorABC):
             mask = selection.all(*cuts)
 
             # Set up DNN features for each region and obtain predictions
-            dnn_features = {}
-            for feature_name in cfg.NN_MODELS.DEEPNET.FEATURES:
-                dnn_features[feature_name] = df[feature_name]
-
-            dnn_features = pd.DataFrame(dnn_features)
-            dnn_features = prepare_data_for_dnn(dnn_features, mask=mask)
+            dnn_features = scale_features_for_dnn(df, cfg, region=region)
 
             # Get the predictions from this model
             df['dnn_score'] = dnn_model.predict(dnn_features.to_numpy())
@@ -1002,9 +997,25 @@ class vbfhinvProcessor(processor.ProcessorABC):
 
             ezfill('dphijj',             dphi=df["dphijj"][mask],   weight=rweight[mask] )
             ezfill('detajj',             deta=df["detajj"][mask],   weight=rweight[mask] )
-            ezfill('mjj',                mjj=df["mjj"][mask],      weight=rweight[mask] )
+            ezfill('mjj',                mjj=df["mjj"][mask],       weight=rweight[mask] )
 
-            # Dijet quantities scaled to zero mean and unit variance
+            # Fill and save histograms for the features that are used by the DNN
+            if cfg.NN_MODELS.DEEPNET.SAVE_FEATURES:
+                ezfill('dphi_ak40_met',      dphi=df["dphi_ak40_met"][mask],    weight=rweight[mask] )
+                ezfill('dphi_ak41_met',      dphi=df["dphi_ak41_met"][mask],    weight=rweight[mask] )
+                ezfill('ht',      ht=df["ht"][mask],    weight=rweight[mask] )
+
+                # Quantities from the max-dijet pair
+                ezfill('mjj_maxmjj',         mjj=df["mjj_maxmjj"][mask],      weight=rweight[mask] )
+                ezfill('detajj_maxmjj',      deta=df["detajj_maxmjj"][mask],  weight=rweight[mask] )
+                ezfill('dphijj_maxmjj',      dphi=df["dphijj_maxmjj"][mask],  weight=rweight[mask] )
+
+                ezfill('ak4_pt0_maxmjj',     jetpt=df["ak4_pt0_maxmjj"][mask],      weight=rweight[mask] )
+                ezfill('ak4_eta0_maxmjj',    jeteta=df["ak4_eta0_maxmjj"][mask],    weight=rweight[mask] )
+                ezfill('ak4_pt1_maxmjj',     jetpt=df["ak4_pt1_maxmjj"][mask],     weight=rweight[mask] )
+                ezfill('ak4_eta1_maxmjj',    jeteta=df["ak4_eta1_maxmjj"][mask],   weight=rweight[mask] )
+
+            # Dijet quantities scaled to zero mean and unit variance (i.e. inputs to the DNN)
             ezfill('mjj_transformed',       transformed=dnn_features["mjj"].to_numpy()[mask],         weight=rweight[mask] )
             ezfill('detajj_transformed',    transformed=dnn_features["detajj"].to_numpy()[mask],      weight=rweight[mask] )
             ezfill('dphijj_transformed',    transformed=dnn_features["dphijj"].to_numpy()[mask],      weight=rweight[mask] )

@@ -144,6 +144,8 @@ default:
       path: models/model_2022-05-20_batch100_dropout0_25_regular
     deepnet:
       path: models/pytorch/2022-06-30_dense
+      save_features: true
+      features_dir: data/dnn/feature_props
       features:
         - mjj
         - dphijj
@@ -155,14 +157,14 @@ default:
         - dphi_ak40_met
         - dphi_ak41_met
         - ht
-        - leadak4_pt
-        - leadak4_eta
-        - trailak4_pt
-        - trailak4_eta
-        - leadak4_mjjmax_pt
-        - leadak4_mjjmax_eta
-        - trailak4_mjjmax_pt
-        - trailak4_mjjmax_eta
+        - ak4_pt0
+        - ak4_eta0
+        - ak4_pt1
+        - ak4_eta1
+        - ak4_pt0_maxmjj
+        - ak4_eta0_maxmjj
+        - ak4_pt1_maxmjj
+        - ak4_eta1_maxmjj
       arch_parameters:
         n_features: 18
         n_classes: 2

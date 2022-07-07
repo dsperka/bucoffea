@@ -136,6 +136,21 @@ def vbfhinv_accumulator(cfg):
     items["dphijj"] = Hist("Counts", dataset_ax, region_ax, dphi_ax)
     items["detajj"] = Hist("Counts", dataset_ax, region_ax, deta_ax)
 
+    # Fill and save histograms for the features that are used by the DNN
+    if cfg.NN_MODELS.DEEPNET.SAVE_FEATURES:
+        items["mjj_maxmjj"] = Hist("Counts", dataset_ax, region_ax, mjj_ax)
+        items["detajj_maxmjj"] = Hist("Counts", dataset_ax, region_ax, deta_ax)
+        items["dphijj_maxmjj"] = Hist("Counts", dataset_ax, region_ax, dphi_ax)
+        
+        items["ak4_pt0_maxmjj"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
+        items["ak4_eta0_maxmjj"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
+        items["ak4_pt1_maxmjj"] = Hist("Counts", dataset_ax, region_ax, jet_pt_ax)
+        items["ak4_eta1_maxmjj"] = Hist("Counts", dataset_ax, region_ax, jet_eta_ax)
+
+        items["ht"] = Hist("Counts", dataset_ax, region_ax, ht_ax)
+        items["dphi_ak40_met"] = Hist("Counts", dataset_ax, region_ax, dphi_ax)
+        items["dphi_ak41_met"] = Hist("Counts", dataset_ax, region_ax, dphi_ax)
+
     # Transformed dijet variables (scaled to zero-mean, unit-variance)
     items["mjj_transformed"] = Hist("Counts", dataset_ax, region_ax, transformed_ax)
     items["detajj_transformed"] = Hist("Counts", dataset_ax, region_ax, transformed_ax)
@@ -335,7 +350,7 @@ def vbfhinv_regions(cfg):
         common_cuts.append('mjj_tight')
 
     regions = {}
-    regions['inclusive'] = ['inclusive']
+    # regions['inclusive'] = ['inclusive']
 
     # Signal regions (v = mono-V, j = mono-jet)
     regions['sr_vbf'] = ['trig_met','metphihemextveto','hornveto'] + common_cuts + ['dpfcalo_sr', 'eemitigation']
