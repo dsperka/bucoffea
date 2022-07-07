@@ -104,7 +104,8 @@ def plot_uncertainty(acc,
         # Save the ratios into an output ROOT file
         ratio = h.integrate("uncertainty", unc).values()[()] / h_nom.values()[()]
 
-        unc_name = f'{nuisance}_up' if 'Up' in unc else f'{nuisance}_down'
+        # Name the uncertainties according to the combine convention
+        unc_name = f'{nuisance}Up' if 'Up' in unc else f'{nuisance}Down'
 
         outputrootfile[f'{dataset_tag}_{unc_name}'] = (ratio, h_nom.axis("score").edges())
 
