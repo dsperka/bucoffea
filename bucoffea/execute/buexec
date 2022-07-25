@@ -252,6 +252,8 @@ def do_submit(args):
             chunkname = f'{dataset}_{ichunk:03d}of{len(chunks):03d}'
             submission_settings = {
                 "Initialdir" : subdir,
+                # Make sure that the CPU understands AVX instructions (for Tensorflow)
+                "Requirements" : "$(requirements:True) && (TARGET.has_avx)",
                 "executable": bucoffea_path("execute/htcondor_wrap.sh"),
                 "should_transfer_files" : "YES",
                 "when_to_transfer_output" : "ON_EXIT",
@@ -264,7 +266,7 @@ def do_submit(args):
                 # "log" :f"/dev/null",
                 "request_cpus" : str(args.jobs),
                 "request_memory" : str(args.memory if args.memory else args.jobs*2100),
-                "+MaxRuntime" : f"{60*60*8}",
+                "+MaxRuntime" : f"{60*60*12}",
                 "on_exit_remove" : "((ExitBySignal == False) && (ExitCode == 0)) || (NumJobStarts >= 2)",
                 }
             if args.send_proxy:
@@ -323,7 +325,7 @@ def main():
     parser_submit = subparsers.add_parser('submit', help='Submission help')
     parser_submit.add_argument('--dataset', type=str, help='Dataset regex to use.')
     parser_submit.add_argument('--filesperjob', type=int, default=None, help='Number of files to process per job')
-    parser_submit.add_argument('--eventsperjob', type=int, default=5e6, help='Number of events to process per job')
+    parser_submit.add_argument('--eventsperjob', type=int, default=2e6, help='Number of events to process per job')
     parser_submit.add_argument('--name', type=str, default=None, help='Name to identify this submission')
     parser_submit.add_argument('--prefetch', action="store_true", default=False, help='Prefetch input files on worker but run over xrootd.')
     parser_submit.add_argument('--no-prefetch', action="store_true", default=False, help='DEPRECATED. Prefetching is now disabled by default. Use --prefetch to activate prefetching.')
