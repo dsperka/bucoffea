@@ -137,6 +137,8 @@ default:
   mitigation:
     hem: True
   nn_models:
+    run:
+      - cnn_score
     uncertainties:
       - cnn_score
       - dnn_score
