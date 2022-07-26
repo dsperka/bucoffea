@@ -36,6 +36,7 @@ recoil_bins_2016 = [ 250,  280,  310,  340,  370,  400,  430,  470,  510, 550,  
 
 binnings = {
     'mjj': Bin('mjj', r'$M_{jj} \ (GeV)$', [200., 400., 600., 900., 1200., 1500., 2000., 2750., 3500.]),
+    'cnn_score': Bin('score', r'CNN score', 25, 0, 1),
     'ak4_pt0': Bin('jetpt',r'Leading AK4 jet $p_{T}$ (GeV)',list(range(80,600,20)) + list(range(600,1000,20)) ),
     'ak4_pt1': Bin('jetpt',r'Trailing AK4 jet $p_{T}$ (GeV)',list(range(40,600,20)) + list(range(600,1000,20)) ),
     'ak4_phi0' : Bin("jetphi", r"Leading AK4 jet $\phi$", 50,-np.pi, np.pi),
@@ -280,7 +281,7 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
         if data_region in ['cr_2m_vbf', 'cr_2e_vbf']:
             ax.set_ylim(1e-2,1e4)
         else:
-            ax.set_ylim(1e-1,1e4)
+            ax.set_ylim(1e-1,1e6)
     else:
         if distribution in ylims.keys():
             ax.set_ylim(ylims[distribution])
