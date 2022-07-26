@@ -1028,7 +1028,6 @@ class vbfhinvProcessor(processor.ProcessorABC):
             # Save signal-like score distribution
             if 'cnn_score' in cfg.NN_MODELS.RUN:
                 ezfill('cnn_score',          score=df["cnn_score"][:, 1][mask],     weight=rweight[mask])
-                ezfill('cnn_score_mjj',      score=df["cnn_score"][:, 1][mask],     mjj=df["mjj"][mask],    weight=rweight[mask])
             
             if 'dnn_score' in cfg.NN_MODELS.RUN:
                 ezfill('dnn_score',          score=df["dnn_score"][:, 1][mask],     weight=rweight[mask])
