@@ -70,6 +70,7 @@ def make_plot(args):
             for distribution in tqdm(distributions[data_region], desc=f"Plotting for {data_region}"):
                 if not re.match(args.distribution, distribution):
                     continue
+                
                 try:
                     plot_data_mc(acc, outtag, year,
                         data=data[data_region],
@@ -82,6 +83,7 @@ def make_plot(args):
                         jes_file='./jec/jes_uncs.root' if args.jes else None,
                         ulxs=not args.eoyxs,
                         fformats=args.fformats,
+                        binwnorm=1 if distribution == 'mjj' else None,
                     )
                 except KeyError:
                     print(f'WARNING: {data_region} not found in inputs, skipping.')
