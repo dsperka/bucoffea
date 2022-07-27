@@ -279,7 +279,7 @@ def plot_data_mc(acc, outtag, year, data, mc, data_region, mc_region, distributi
         ax.set_ylabel('Events / GeV')
     elif distribution == 'cnn_score':
         if data_region in ['cr_2m_vbf', 'cr_2e_vbf']:
-            ax.set_ylim(1e-2,1e4)
+            ax.set_ylim(1e-2,1e5)
         else:
             ax.set_ylim(1e-1,1e6)
     else:
