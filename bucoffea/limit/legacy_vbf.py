@@ -39,11 +39,11 @@ def datasets(year, include_sr_data=False):
         data['sr_vbf'] = re.compile(f'MET_{year}')
 
     mc = {
-        'sr_vbf_no_veto_all' : re.compile(f'(ttH_HToInvisible_M125.*|WH_WToQQ_Hinv_M125.*|ZH_ZToQQ_HToInv.*M125.*|(VBF|GluGlu)_HToInvisible.*M125.*|ggZH.*|ZNJetsToNuNu_M-50_LHEFilterPtZ-FXFX.*|EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
-        'cr_1m_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
-        'cr_1e_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
-        'cr_2m_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
-        'cr_2e_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL_Pt_FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
+        'sr_vbf_no_veto_all' : re.compile(f'(ttH_HToInvisible_M125.*|WH_WToQQ_Hinv_M125.*|ZH_ZToQQ_HToInv.*M125.*|(VBF|GluGlu)_HToInvisible.*M125.*|ggZH.*|ZNJetsToNuNu_M-50_LHEFilterPtZ-FXFX.*|EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL.*FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
+        'cr_1m_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL.*FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
+        'cr_1e_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL.*FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
+        'cr_2m_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL.*FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
+        'cr_2e_vbf' : re.compile(f'(EW.*|Top_FXFX.*|Diboson.*|QCD_HT.*|DYJetsToLL.*FXFX.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
         'cr_g_vbf' : re.compile(f'(GJets_DR-0p4.*|VBFGamma.*|QCD_data.*|WJetsToLNu_Pt-FXFX.*).*{year}'),
         'sr_vbf' : re.compile('nomatch')
     }
