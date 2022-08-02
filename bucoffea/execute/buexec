@@ -46,6 +46,9 @@ def choose_processor(args):
     elif args.processor == 'gen':
         from bucoffea.gen.genVbfProcessor import genVbfProcessor
         return genVbfProcessor
+    elif args.processor == 'zp2mu2nu':
+        from bucoffea.zp2mu2nu import zp2mu2nuProcessor
+        return zp2mu2nuProcessor
 
 def do_run(args):
     """Run the analysis locally."""
@@ -299,7 +302,7 @@ def do_submit(args):
 
 def main():
     parser = argparse.ArgumentParser(prog='Execution wrapper for coffea analysis')
-    parser.add_argument('processor', type=str, help='Processor to run.', choices=['monojet','vbfhinv','pdfweight','lhev','purity','sumw','gen'])
+    parser.add_argument('processor', type=str, help='Processor to run.', choices=['monojet','vbfhinv','pdfweight','lhev','purity','sumw','gen','zp2mu2nu'])
     parser.add_argument('--outpath', type=str, help='Path to save output under.')
     parser.add_argument('--jobs','-j', type=int, default=1, help='Number of cores to use / request.')
     parser.add_argument('--datasrc', type=str, default='eos', help='Source of data files.', choices=['eos','das','ac'])

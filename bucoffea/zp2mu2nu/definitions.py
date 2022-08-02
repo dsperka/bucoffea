@@ -165,7 +165,7 @@ def zp2mu2nu_regions(cfg):
 
     # Dimuon region
     #cr_2m_cuts = ['trig_mu','two_muons', 'at_least_one_tight_mu', 'dimuon_mass', 'veto_ele', 'dimuon_charge'] + common_cuts + ['dpfcalo_cr']
-    cr_2m_cuts = ['trig_mu','two_muons', 'two_tight_muons', 'dimuon_mass', 'dimuon_charge'] + common_cuts 
+    cr_2m_cuts = ['trig_mu','two_muons', 'two_tight_muons', 'mu_pt_trig_safe', 'dimuon_mass', 'dimuon_charge'] + common_cuts 
     regions['cr_2m_zp2mu2nu'] = cr_2m_cuts
 
     ## Single muon CR

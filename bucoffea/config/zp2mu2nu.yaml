@@ -4,12 +4,12 @@ default:
     control:
       doublemu:
         mass:
-          min: 4
-          max: 1000
+          min: 12
+          max: 9999
       doubleel:
         mass:
-          min: 4
-          max: 1000
+          min: 12
+          max: 9999
       singlemu:
         mt : 9999
       singleel:
@@ -44,7 +44,7 @@ default:
   muon:
     cuts:
       tight:
-        pt : 28
+        pt : 10
         eta : 2.4
         iso : 0.15
       loose:
@@ -126,7 +126,7 @@ default:
     regionregex: .*
     save:
       passing: True
-      tree: True
+      tree: False
       tree_regions:
         - cr_2m_zp2mu2nu
     kinematics:

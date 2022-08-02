@@ -18,7 +18,7 @@ def files_by_dataset(filelist):
     # Split input files by dataset by dataset
     datasets = defaultdict(list)
     for ifile in filelist:
-        m = re.match("(vbfhinv|monojet)_(.*_201(6|7|8)([A-Z])?)(_\d*)?.coffea", os.path.basename(ifile))
+        m = re.match("(vbfhinv|monojet|zp2mu2nu)_(.*_201(6|7|8)([A-Z])?)(_\d*)?.coffea", os.path.basename(ifile))
 
         if not m:
             print(f"Skipping file {ifile}")

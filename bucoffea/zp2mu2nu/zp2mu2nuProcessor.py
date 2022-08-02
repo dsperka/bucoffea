@@ -187,7 +187,7 @@ class zp2mu2nuProcessor(processor.ProcessorABC):
                       & (muons.pt>cfg.MUON.CUTS.TIGHT.PT) \
                       & (muons.abseta<cfg.MUON.CUTS.TIGHT.ETA)
 
-        dimuons = muons.distincts()
+        dimuons = muons[df['is_tight_muon']].distincts()
         dimuon_charge = dimuons.i0['charge'] + dimuons.i1['charge']
 
         df['MT_mu'] = ((muons.counts==1) * mt(muons.pt, muons.phi, met_pt, met_phi)).max()
@@ -209,8 +209,6 @@ class zp2mu2nuProcessor(processor.ProcessorABC):
         selection.add('inclusive', pass_all)
         selection = trigger_selection(selection, df, cfg)
 
-        selection.add('mu_pt_trig_safe', muons.pt.max() > 30)
-
         # Common selection
 #        selection.add('veto_ele', electrons.counts==0)
         selection.add('veto_muo', muons.counts==0)
@@ -230,12 +228,14 @@ class zp2mu2nuProcessor(processor.ProcessorABC):
 
         # Dimuon CR
         leadmuon_index=muons.pt.argmax()
-        selection.add('at_least_one_tight_mu', df['is_tight_muon'].any())
+        selection.add('two_tight_muons', muons[df['is_tight_muon']].counts==2)
+        selection.add('mu_pt_trig_safe', muons[df['is_tight_muon']].pt.max() > 25)
+        selection.add('two_muons', muons.counts==2)
+
         selection.add('dimuon_mass', ((dimuons.mass > cfg.SELECTION.CONTROL.DOUBLEMU.MASS.MIN) \
                                     & (dimuons.mass < cfg.SELECTION.CONTROL.DOUBLEMU.MASS.MAX)).any())
-        selection.add('dimuon_charge', (dimuon_charge==0).any())
-        selection.add('two_muons', muons.counts==2)
-        selection.add('two_tight_muons', muons[df['is_tight_muon']].counts==2)
+        selection.add('dimuon_charge', (dimuon_charge==0).counts==1)
+
 
         # Single muon CR
         selection.add('one_muon', muons.counts==1)
@@ -276,17 +276,17 @@ class zp2mu2nuProcessor(processor.ProcessorABC):
         if not df['is_data']:
             weights.add('gen', df['Generator_weight'])
 
-            try:
-                weights.add('prefire', df['PrefireWeight'])
-            except KeyError:
-                weights.add('prefire', np.ones(df.size))
+#            try:
+#                weights.add('prefire', df['PrefireWeight'])
+#            except KeyError:
+#                weights.add('prefire', np.ones(df.size))
 
-#            weights = candidate_weights(weights, df, evaluator, muons, electrons, photons, cfg)
-            weights = candidate_weights(weights, df, evaluator, muons, photons, cfg)
+##            weights = candidate_weights(weights, df, evaluator, muons, electrons, photons, cfg)
+#            weights = candidate_weights(weights, df, evaluator, muons, photons, cfg)
 
-            # B jet veto weights
-            bsf_variations = btag_weights(bjets,cfg)
-            weights.add("bveto", (1-bsf_variations["central"]).prod())
+#            # B jet veto weights
+#            bsf_variations = btag_weights(bjets,cfg)
+#            weights.add("bveto", (1-bsf_variations["central"]).prod())
 
             weights = pileup_weights(weights, df, evaluator, cfg)
 
@@ -358,6 +358,59 @@ class zp2mu2nuProcessor(processor.ProcessorABC):
 
             mask = selection.all(*cuts)
 
+            one_jet = ak4[ak4.pt>30].counts >= 1                    
+            jet1_pt = -999. * np.ones(df.size)
+            jet1_pt[one_jet] = ak4[one_jet].pt[:,0].flatten()
+
+            # Check for loose leptons in SR
+            event_has_at_least_one_muon = muons.counts > 0
+            event_has_at_least_two_muons = muons.counts > 1
+            
+            two_tight_muons = muons[df["is_tight_muon"]].counts == 2
+            
+            mu1_pt = -999. * np.ones(df.size)
+            mu1_eta = -999. * np.ones(df.size)
+            mu1_phi = -999. * np.ones(df.size)
+            mu1_pt[two_tight_muons] = muons[two_tight_muons].pt[:,0].flatten()
+            mu1_eta[two_tight_muons] = muons[two_tight_muons].eta[:,0].flatten()
+            mu1_phi[two_tight_muons] = muons[two_tight_muons].phi[:,0].flatten()
+            
+            mu2_pt = -999. * np.ones(df.size)
+            mu2_eta = -999. * np.ones(df.size)
+            mu2_phi = -999. * np.ones(df.size)
+            mu2_pt[two_tight_muons] = muons[two_tight_muons].pt[:,1].flatten()
+            mu2_eta[two_tight_muons] = muons[two_tight_muons].eta[:,1].flatten()
+            mu2_phi[two_tight_muons] = muons[two_tight_muons].phi[:,1].flatten()
+            
+            dimuon_mass = -999. * np.ones(df.size)
+            dimuon_mass[two_tight_muons] = dimuons[two_tight_muons].mass[:,0].flatten()
+            
+            dimuon_pt = -999. * np.ones(df.size)
+            dimuon_pt[two_tight_muons] = dimuons[two_tight_muons].pt[:,0].flatten()
+            
+            dimuon_eta = -999. * np.ones(df.size)
+            dimuon_eta[two_tight_muons] = dimuons[two_tight_muons].eta[:,0].flatten()
+            
+            dimuon_phi = -999. * np.ones(df.size)
+            dimuon_phi[two_tight_muons] = dimuons[two_tight_muons].phi[:,0].flatten()
+            
+            mt_mu1mu2 = -999. * np.ones(df.size)
+            mt_mu1mu2[two_tight_muons] = mt(muons[two_tight_muons].pt[:,0].flatten(), muons[two_tight_muons].phi[:,0].flatten(), \
+                                            muons[two_tight_muons].pt[:,1].flatten(), muons[two_tight_muons].phi[:,1].flatten())
+            
+            mt_mu1met = -999. * np.ones(df.size)
+            mt_mu1met[two_tight_muons] = mt(muons[two_tight_muons].pt[:,0].flatten(), muons[two_tight_muons].phi[:,0].flatten(), \
+                                            met_pt[two_tight_muons], met_phi[two_tight_muons])
+            
+            mt_mu2met = -999. * np.ones(df.size)
+            mt_mu2met[two_tight_muons] = mt(muons[two_tight_muons].pt[:,1].flatten(), muons[two_tight_muons].phi[:,1].flatten(), \
+                                            met_pt[two_tight_muons], met_phi[two_tight_muons])
+            
+            mt_dimuonmet = -999. * np.ones(df.size)
+            mt_dimuonmet[two_tight_muons] = mt(dimuons[two_tight_muons].pt[:,0].flatten(), dimuons[two_tight_muons].phi[:,0].flatten(), \
+                                               met_pt[two_tight_muons], met_phi[two_tight_muons])
+            
+
             if cfg.RUN.SAVE.TREE:
                 if region in cfg.RUN.SAVE.TREE_REGIONS: 
                     output['tree_int64'][region]["event"]             +=  processor.column_accumulator(df["event"][mask])
@@ -372,62 +425,10 @@ class zp2mu2nuProcessor(processor.ProcessorABC):
                     output['tree_float16'][region]["nMediumBJet"]       +=  processor.column_accumulator(np.float16(bjets.counts[mask]))
                     output['tree_float16'][region]["nJets"]       +=  processor.column_accumulator(np.float16(ak4[ak4.pt>30].counts[mask]))
 
-                    one_jet = ak4[ak4.pt>30].counts >= 1                    
-                    jet1_pt = -999. * np.ones(df.size)
-                    jet1_pt[one_jet] = ak4[one_jet].pt[:,0].flatten()
                     output['tree_float16'][region]["jet1_pt"]   +=  processor.column_accumulator(jet1_pt[mask])
 
                     output['tree_float16'][region]["met_pt"]       +=  processor.column_accumulator(np.float16(met_pt[mask]))
                     output['tree_float16'][region]["met_phi"]       +=  processor.column_accumulator(np.float16(met_phi[mask]))
-
-                    # Check for loose leptons in SR
-                    event_has_at_least_one_muon = muons.counts > 0
-                    event_has_at_least_two_muons = muons.counts > 1
-
-                    two_tight_muons = muons[df["is_tight_muon"]].counts == 2
-                    
-                    mu1_pt = -999. * np.ones(df.size)
-                    mu1_eta = -999. * np.ones(df.size)
-                    mu1_phi = -999. * np.ones(df.size)
-                    mu1_pt[two_tight_muons] = muons[two_tight_muons].pt[:,0].flatten()
-                    mu1_eta[two_tight_muons] = muons[two_tight_muons].eta[:,0].flatten()
-                    mu1_phi[two_tight_muons] = muons[two_tight_muons].phi[:,0].flatten()
-
-                    mu2_pt = -999. * np.ones(df.size)
-                    mu2_eta = -999. * np.ones(df.size)
-                    mu2_phi = -999. * np.ones(df.size)
-                    mu2_pt[two_tight_muons] = muons[two_tight_muons].pt[:,1].flatten()
-                    mu2_eta[two_tight_muons] = muons[two_tight_muons].eta[:,1].flatten()
-                    mu2_phi[two_tight_muons] = muons[two_tight_muons].phi[:,1].flatten()
-
-                    dimuon_mass = -999. * np.ones(df.size)
-                    dimuon_mass[two_tight_muons] = dimuons[two_tight_muons].mass[:,0].flatten()
-
-                    dimuon_pt = -999. * np.ones(df.size)
-                    dimuon_pt[two_tight_muons] = dimuons[two_tight_muons].pt[:,0].flatten()
-
-                    dimuon_eta = -999. * np.ones(df.size)
-                    dimuon_eta[two_tight_muons] = dimuons[two_tight_muons].eta[:,0].flatten()
-
-                    dimuon_phi = -999. * np.ones(df.size)
-                    dimuon_phi[two_tight_muons] = dimuons[two_tight_muons].phi[:,0].flatten()
-                    
-                    mt_mu1mu2 = -999. * np.ones(df.size)
-                    mt_mu1mu2[two_tight_muons] = mt(muons[two_tight_muons].pt[:,0].flatten(), muons[two_tight_muons].phi[:,0].flatten(), \
-                                                    muons[two_tight_muons].pt[:,1].flatten(), muons[two_tight_muons].phi[:,1].flatten())
-
-                    mt_mu1met = -999. * np.ones(df.size)
-                    mt_mu1met[two_tight_muons] = mt(muons[two_tight_muons].pt[:,0].flatten(), muons[two_tight_muons].phi[:,0].flatten(), \
-                                                    met_pt[two_tight_muons], met_phi[two_tight_muons])
-
-                    mt_mu2met = -999. * np.ones(df.size)
-                    mt_mu2met[two_tight_muons] = mt(muons[two_tight_muons].pt[:,1].flatten(), muons[two_tight_muons].phi[:,1].flatten(), \
-                                                    met_pt[two_tight_muons], met_phi[two_tight_muons])
-
-                    mt_dimuonmet = -999. * np.ones(df.size)
-                    mt_dimuonmet[two_tight_muons] = mt(dimuons[two_tight_muons].pt[:,0].flatten(), dimuons[two_tight_muons].phi[:,0].flatten(), \
-                                                       met_pt[two_tight_muons], met_phi[two_tight_muons])
-
 
                     output['tree_float16'][region]["mu1_pt"]   +=  processor.column_accumulator(mu1_pt[mask])
                     output['tree_float16'][region]["mu1_eta"]  +=  processor.column_accumulator(mu1_eta[mask])
@@ -729,7 +730,7 @@ class zp2mu2nuProcessor(processor.ProcessorABC):
 
             # Dimuon
             if '_2m_' in region:
-                w_dimu = weight_shape(dimuons.pt[mask], rweight[mask])
+                w_dimu = weight_shape(dimuons.pt[mask], rweight[mask])                
                 #ezfill('muon_pt0',      pt=dimuons.i0.pt[mask].flatten(),           weight=w_dimu)
                 #ezfill('muon_pt1',      pt=dimuons.i1.pt[mask].flatten(),           weight=w_dimu)
                 #ezfill('muon_eta0',     eta=dimuons.i0.eta[mask].flatten(),         weight=w_dimu)

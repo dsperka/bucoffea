@@ -68,10 +68,18 @@ DY4JetsToLL_M-50-MLM_2017:
   gen: 44.24
 DY4JetsToLL_M-50-MLM_2018:
   gen: 44.21
+DYJetsToLL_M-10to50-MLM_2017:
+  gen:  18610.
+  nnlo: 18445.
+DYJetsToLL_M-10to50-MLM_2018:
+  gen: 18610.
+  nnlo: 18445.
 DYJetsToLL_M-50-MLM_2017:
   gen: 5347.0
+  nnlo: 6077.22
 DYJetsToLL_M-50-MLM_2018:
   gen: 5337.0
+  nnlo: 6077.22
 DYJetsToLL_M-50_HT-100to200-MLM_2016:
   gen: 147.7
 DYJetsToLL_M-50_HT-100to200-MLM_ext1_2016:
@@ -1179,3 +1187,11 @@ ggZH_ZToQQ_HToInvisible_M125_pow_pythia8_2017:
   gen: 0.1223
 ggZH_ZToQQ_HToInvisible_M125_pow_pythia8_2018:
   gen: 0.1223
+WWTo2L2Nu-pow_2017:
+  gen: 11.09
+WWTo2L2Nu-pow_2018:
+  gen: 11.09
+ZZTo2L2Nu_pow_pythia8_2017:
+  gen: 0.9738
+ZZTo2L2Nu_pow_pythia8_2018:
+  gen: 0.9738

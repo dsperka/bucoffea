@@ -307,6 +307,9 @@ def create_dataset_mapping(all_datasets):
         'DYNJetsToLL_M-50-MLM_2017' : [x for x in all_datasets if re.match('DY(\d+)JetsToLL_M-50-MLM_2017',x)],
         'DYNJetsToLL_M-50-MLM_2018' : [x for x in all_datasets if re.match('DY(\d+)JetsToLL_M-50-MLM_2018',x)],
 
+        'DYJetsToLL_M-10-MLM_2017' : [x for x in all_datasets if re.match('DYJetsToLL_M-.*-MLM_2017',x)],
+        'DYJetsToLL_M-10-MLM_2018' : [x for x in all_datasets if re.match('DYJetsToLL_M-.*-MLM_2018',x)],
+
         'ZJetsToNuNu_HT_2017' : [x for x in all_datasets if re.match('ZJetsToNuNu_HT-(\d+)To.*-MLM_2017',x)],
         'ZJetsToNuNu_HT_2018' : [x for x in all_datasets if re.match('ZJetsToNuNu_HT-(\d+)To.*-MLM_2018',x)],
 
@@ -336,10 +339,10 @@ def create_dataset_mapping(all_datasets):
 
         'EWKW2Jets_WToLNu_M-50-mg_{year}' : 'EWKW(Plus|Minus)2Jets.*-mg_{year}',
 
-        'Diboson_{year}' : '((W|Z)(W|Z))(_PSweights)?_{year}',
-        'WW_{year}' : 'WW(_PSweights)?_{year}',
-        'ZZ_{year}' : 'ZZ(_PSweights)?_{year}',
-        'WZ_{year}' : 'WZ(_PSweights)?_{year}',
+#        'Diboson_{year}' : '((W|Z)(W|Z))(_PSweights)?_{year}',
+#        'WW_{year}' : 'WW(_PSweights)?_{year}',
+#        'ZZ_{year}' : 'ZZ(_PSweights)?_{year}',
+#        'WZ_{year}' : 'WZ(_PSweights)?_{year}',
 
         'ZNJetsToNuNu_M-50_LHEFilterPtZ-FXFX_{year}' : 'Z\dJetsToNuN(u|U)_M-50_LHEFilterPtZ.*FXFX.*{year}',
         'ZNJetsToNuNu_M-50_LHEZpT-FXFX_{year}' : 'Z\dJetsToNuN(u|U)_M-50_LHEZpT.*FXFX.*{year}',
@@ -381,6 +384,8 @@ def merge_datasets(histogram):
     :rtype: Coffea histogram
     """
     all_datasets = list(map(str, histogram.identifiers('dataset')))
+    print("all datasets")
+    print(all_datasets)
     # Create the mapping for the datasets in this histogram
     mapping = create_dataset_mapping(all_datasets)
     
@@ -459,6 +464,7 @@ def scale_xs_lumi(histogram, mcscale=1, scale_lumi=True, ulxs=True):
     for mc in mcs:
         try:
             ixs = known_xs[re.sub('_new_*pmx','',mc)]
+            print(f"Cross section found for dataset {mc}.")
         except KeyError:
             print(f"WARNING: Cross section not found for dataset {mc}. Using 0.")
             ixs = 0

@@ -180,8 +180,8 @@ def files_from_eos(regex):
 
     host = socket.gethostname()
     if 'lxplus' in host:
-        topdir = '/eos/user/a/aakpinar/nanopost'
-        tag = 'ULv8_05Feb21_withJetImages'
+        topdir = '/eos/user/d/dsperka/Zp2m2nu/nanopost/'
+        tag = 'ULv8_05Feb21'
         fileset = find_files(pjoin(topdir, tag), regex)
 
     elif 'lpc' in host:
