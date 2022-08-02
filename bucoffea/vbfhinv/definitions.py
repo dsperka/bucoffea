@@ -29,7 +29,7 @@ def vbfhinv_accumulator(cfg):
     met_ax = Bin("met", r"$p_{T}^{miss}$ (GeV)", 200, 0, 2000)
     recoil_ax = Bin("recoil", r"Recoil (GeV)", 200, 0, 2000)
 
-    score_ax = Bin("score", "Neural network score", 50, 0, 1)
+    score_ax = Bin("score", "Neural network score", 100, 0, 1)
     transformed_ax = Bin("transformed", "Transformed value", 50, -5, 5)
 
     mjj_ax = Bin("mjj", r"$M_{jj}$ (GeV)", 150, 0, 7500)
@@ -120,8 +120,6 @@ def vbfhinv_accumulator(cfg):
     items["cnn_score_unc"] = Hist("Counts", dataset_ax, region_ax, score_ax, unc_ax)
     items["dnn_score_noewk"] = Hist("Counts", dataset_ax, region_ax, score_ax)
     items["cnn_score_noewk"] = Hist("Counts", dataset_ax, region_ax, score_ax)
-
-    items["cnn_score_mjj"] = Hist("Counts", dataset_ax, region_ax, score_ax, mjj_ax_coarse)
 
     items["mjj"] = Hist("Counts", dataset_ax, region_ax, mjj_ax)
     items["mjj_noewk"] = Hist("Counts", dataset_ax, region_ax, mjj_ax)

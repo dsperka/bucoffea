@@ -23,9 +23,9 @@ pjoin = os.path.join
 
 # Paths to the merged accumulators:
 # Analysis version
-PATH_TO_FIRST_ACC  = bucoffea_path("submission/merged_2021-10-13_vbfhinv_ULv8_05Feb21")
+PATH_TO_FIRST_ACC  = bucoffea_path("submission/merged_2022-07-20_vbfhinv_ULv8_05Feb21_2017")
 # ML version
-PATH_TO_SECOND_ACC = bucoffea_path("submission/merged_2022-06-20_vbfhinv_UL_fromMiniv2_19Jun22")
+PATH_TO_SECOND_ACC = bucoffea_path("submission/merged_2022-07-25_vbfhinv_14Jul22_jetImages_processed")
 
 def parse_cli():
     parser = argparse.ArgumentParser()
@@ -76,10 +76,10 @@ def compare_integrals(acc1, acc2, distribution1, distribution2, region='sr_vbf',
     # Regular expressions specifying which datasets we want to look at for each region
     datasets_to_show = {
         "sr_vbf" : re.compile(f"(Z\dJetsToNuNu|WJetsToLNu|MET|EWK|.*HToInvisible.*).*{year}"),
-        "cr_1m_vbf" : re.compile(f"(WJetsToLNu_Pt|MET|EWK).*{year}"),
-        "cr_2m_vbf" : re.compile(f"(DYJetsToLL_Pt|MET|EWK).*{year}"),
-        "cr_1e_vbf" : re.compile(f"(WJetsToLNu_Pt|Single(Ele|Pho)|EWK).*{year}"),
-        "cr_2e_vbf" : re.compile(f"(DYJetsToLL_Pt|Single(Ele|Pho)|EWK).*{year}"),
+        "cr_1m_vbf" : re.compile(f"(WJetsToLNu_Pt|MET|EWKW).*{year}"),
+        "cr_2m_vbf" : re.compile(f"(DYJetsToLL.*Pt|MET|EWKZ).*{year}"),
+        "cr_1e_vbf" : re.compile(f"(WJetsToLNu_Pt|Single(Ele|Pho)|EWKW).*{year}"),
+        "cr_2e_vbf" : re.compile(f"(DYJetsToLL.*Pt|Single(Ele|Pho)|EWKZ).*{year}"),
         "cr_g_vbf" : re.compile(f"(GJets_DR-0p4|VBFGamma|Single(Ele|Pho)).*{year}"),
     }
 
@@ -89,18 +89,27 @@ def compare_integrals(acc1, acc2, distribution1, distribution2, region='sr_vbf',
         if not re.match(datasets_to_show[region], dataset.name):
             continue
         
-        # Naming convention problem for MET 2017E dataset
+        # Naming convention problems for several datasets
         if re.match("MET.*2017E", dataset.name):
             dataset1 = "MET_ver3_2017E"
             dataset2 = "MET_ver1_2017E"
+        elif re.match("SingleElectron.*2017E", dataset.name):
+            dataset1 = "SingleElectron_ver2_2017E"
+            dataset2 = "SingleElectron_ver1_2017E"
+        elif re.match("DYJetsToLL.*Pt.*", dataset.name):
+            if "50To100" in dataset.name:
+                continue
+            dataset1 = dataset.name
+            dataset2 = re.sub("Pt", "LHEFilterPtZ", dataset.name)
         else:
             dataset1 = dataset2 = dataset
+        
         try:
             hist1 = h1.integrate("dataset", dataset1).integrate("region", region)
             hist2 = h2.integrate("dataset", dataset2).integrate("region", region)
 
-            integral1 = np.sum(hist1.values()[()])
-            integral2 = np.sum(hist2.values()[()])
+            integral1 = np.sum(hist1.values(overflow='over')[()])
+            integral2 = np.sum(hist2.values(overflow='over')[()])
         
             diff = (integral1-integral2) / integral1 * 100
         
@@ -112,6 +121,7 @@ def compare_integrals(acc1, acc2, distribution1, distribution2, region='sr_vbf',
         except KeyError:
             continue
 
+    # Print the table
     print(tabulate(table, headers=["Process", "Integral1", "Integral2", "Diff (%)"], floatfmt=".3f"))
 
     # Also write this out to an output file
